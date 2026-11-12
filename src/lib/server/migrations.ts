@@ -1,0 +1,92 @@
+/**
+ * Schema migrations, applied in order at startup. The database's `user_version`
+ * records how many have run. Never edit a released migration — append a new one.
+ */
+export const migrations: string[] = [
+	/* 1: initial schema */ `
+	CREATE TABLE users (
+		id            INTEGER PRIMARY KEY,
+		email         TEXT NOT NULL UNIQUE COLLATE NOCASE,
+		name          TEXT NOT NULL,
+		password_hash TEXT NOT NULL,
+		role          TEXT NOT NULL DEFAULT 'member' CHECK (role IN ('admin', 'member')),
+		created_at    TEXT NOT NULL DEFAULT (datetime('now'))
+	);
+
+	CREATE TABLE sessions (
+		id         TEXT PRIMARY KEY,
+		user_id    INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+		expires_at INTEGER NOT NULL
+	);
+	CREATE INDEX sessions_user ON sessions(user_id);
+
+	CREATE TABLE vehicles (
+		id                     INTEGER PRIMARY KEY,
+		registration           TEXT NOT NULL,
+		nickname               TEXT,
+		make                   TEXT,
+		model                  TEXT,
+		year                   INTEGER,
+		colour                 TEXT,
+		fuel_type              TEXT,
+		engine_cc              INTEGER,
+		vin                    TEXT,
+		mileage                INTEGER,
+		purchase_date          TEXT,
+		purchase_price         REAL,
+		tyre_size              TEXT,
+		tyre_pressure_front    TEXT,
+		tyre_pressure_rear     TEXT,
+		oil_spec               TEXT,
+		key_code               TEXT,
+		locking_wheel_nut_code TEXT,
+		notes                  TEXT,
+		archived               INTEGER NOT NULL DEFAULT 0,
+		created_at             TEXT NOT NULL DEFAULT (datetime('now')),
+		updated_at             TEXT NOT NULL DEFAULT (datetime('now'))
+	);
+
+	CREATE TABLE vehicle_users (
+		vehicle_id INTEGER NOT NULL REFERENCES vehicles(id) ON DELETE CASCADE,
+		user_id    INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+		role       TEXT NOT NULL CHECK (role IN ('owner', 'editor', 'viewer')),
+		PRIMARY KEY (vehicle_id, user_id)
+	);
+	CREATE INDEX vehicle_users_user ON vehicle_users(user_id);
+
+	CREATE TABLE due_items (
+		id              INTEGER PRIMARY KEY,
+		vehicle_id      INTEGER NOT NULL REFERENCES vehicles(id) ON DELETE CASCADE,
+		type            TEXT NOT NULL,
+		label           TEXT,
+		due_date        TEXT,
+		due_mileage     INTEGER,
+		provider        TEXT,
+		reference       TEXT,
+		phone           TEXT,
+		emergency_phone TEXT,
+		website         TEXT,
+		start_date      TEXT,
+		cost            REAL,
+		excess          REAL,
+		notes           TEXT,
+		created_at      TEXT NOT NULL DEFAULT (datetime('now')),
+		updated_at      TEXT NOT NULL DEFAULT (datetime('now'))
+	);
+	CREATE INDEX due_items_vehicle ON due_items(vehicle_id);
+
+	CREATE TABLE contacts (
+		id           INTEGER PRIMARY KEY,
+		user_id      INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+		name         TEXT NOT NULL,
+		relationship TEXT,
+		phone        TEXT NOT NULL
+	);
+	CREATE INDEX contacts_user ON contacts(user_id);
+
+	CREATE TABLE settings (
+		key   TEXT PRIMARY KEY,
+		value TEXT NOT NULL
+	);
+	`
+];
