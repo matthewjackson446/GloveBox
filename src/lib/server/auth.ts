@@ -121,12 +121,13 @@ export function deleteUserSessions(userId: number, keepToken?: string | null) {
 /**
  * Only mark the cookie Secure when the browser is actually on HTTPS. Unraid users
  * often reach the app on plain http://192.168.x.x, where a Secure cookie would be dropped.
+ *
+ * Don't trust `event.url.protocol`: adapter-node reports https by default when ORIGIN
+ * isn't set. The Node server only ever speaks plain HTTP, so HTTPS always means a
+ * reverse proxy, which tells us via X-Forwarded-Proto.
  */
 export function isSecureRequest(event: RequestEvent): boolean {
-	return (
-		event.url.protocol === 'https:' ||
-		event.request.headers.get('x-forwarded-proto')?.split(',')[0].trim() === 'https'
-	);
+	return event.request.headers.get('x-forwarded-proto')?.split(',')[0].trim() === 'https';
 }
 
 export function setSessionCookie(event: RequestEvent, token: string, expires: Date) {
