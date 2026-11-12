@@ -5,8 +5,12 @@
 	import StatusText from '$lib/components/StatusText.svelte';
 	import { formatDate, formatMiles, formatMoney, formatTimestamp, telHref, vehicleName, websiteHref } from '$lib/format';
 	import type { MotDefect } from '$lib/types';
-	import { CORE_TYPES, ITEM_TYPES, ITEM_TYPE_ORDER, itemTitle } from '$lib/items';
-	import { compareStates, itemState } from '$lib/status';
+	import { CORE_TYPES, ITEM_TYPES, ITEM_TYPE_ORDER, isRenewable, itemTitle } from '$lib/items';
+	import { compareStates, itemState, todayISO } from '$lib/status';
+	import DocumentList from '$lib/components/DocumentList.svelte';
+	import UploadForm from '$lib/components/UploadForm.svelte';
+	import { milesPerYear, projectMileageDate, recordKindLabel } from '$lib/history';
+	import type { DocumentRow } from '$lib/types';
 
 	let { data, form } = $props();
 
@@ -70,6 +74,34 @@
 				? 'bg-orange-100 text-orange-800 dark:bg-orange-950 dark:text-orange-300'
 				: 'bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300';
 	const roleLabels = { owner: 'Owner', editor: 'Can edit', viewer: 'Can view' };
+
+	/* Service history, mileage and documents */
+	const rate = $derived(milesPerYear(data.mileage));
+	const latestReading = $derived(data.mileage[0] ?? null);
+	const projected = (target: number) => projectMileageDate(target, v.mileage, latestReading?.date ?? todayISO(), rate);
+	let showAllRecords = $state(false);
+	const visibleRecords = $derived(showAllRecords ? data.records : data.records.slice(0, 6));
+	const recordDocs = (id: number) => data.documents.filter((d) => d.record_id === id);
+	const uploadLinks = $derived([
+		...data.items.map((i) => ({ value: `item:${i.id}`, label: itemTitle(i) })),
+		...data.records.slice(0, 20).map((r) => ({ value: `record:${r.id}`, label: `${r.title} (${formatDate(r.date)})` }))
+	]);
+	const linkLabel = (d: DocumentRow) => {
+		if (d.item_id) {
+			const i = data.items.find((x) => x.id === d.item_id);
+			return i ? itemTitle(i) : null;
+		}
+		if (d.record_id) return data.records.find((x) => x.id === d.record_id)?.title ?? null;
+		return null;
+	};
+	const sourceLabel = { manual: 'Updated', service: 'Service', mot: 'MOT' };
+	const sections = $derived([
+		['renewals', 'Renewals'],
+		['history', 'History'],
+		['documents', 'Documents'],
+		...(data.motTests.length ? [['mot', 'MOT']] : []),
+		['details', 'Details']
+	]);
 </script>
 
 <svelte:head><title>{v.registration} · Glovebox</title></svelte:head>
@@ -152,8 +184,14 @@
 	{/if}
 {/if}
 
+<nav class="mt-6 flex flex-wrap gap-1 border-b border-zinc-200 text-sm dark:border-zinc-800" aria-label="Sections">
+	{#each sections as [id, label]}
+		<a href="#{id}" class="-mb-px border-b-2 border-transparent px-3 py-2 text-zinc-500 hover:border-zinc-300 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100">{label}</a>
+	{/each}
+</nav>
+
 <!-- Renewals & due dates -->
-<section class="mt-10">
+<section class="mt-8 scroll-mt-20" id="renewals">
 	<div class="flex items-center justify-between">
 		<h2 class="section-title">Renewals &amp; due dates</h2>
 	</div>
@@ -172,8 +210,16 @@
 							{#if item.due_mileage != null}<span class="text-zinc-500 dark:text-zinc-400">{item.due_date ? ' or at ' : 'At '}{formatMiles(item.due_mileage)}</span>{/if}
 						</p>
 						<StatusText state={item.state} />
+						{#if item.due_mileage != null && projected(item.due_mileage)}
+							<p class="mt-0.5 text-xs text-zinc-500">Around {formatDate(projected(item.due_mileage))} at your usual {rate?.toLocaleString('en-GB')} miles a year</p>
+						{/if}
 					</div>
-					{#if canEdit}<a href="/vehicles/{v.id}/items/{item.id}" class="btn-ghost -mt-1 -mr-2 px-3 py-1.5">Edit</a>{/if}
+					{#if canEdit}
+						<div class="-mt-1 -mr-2 flex shrink-0">
+							{#if isRenewable(item.type)}<a href="/vehicles/{v.id}/items/{item.id}/renew" class="btn-ghost px-3 py-1.5">Renew</a>{/if}
+							<a href="/vehicles/{v.id}/items/{item.id}" class="btn-ghost px-3 py-1.5">Edit</a>
+						</div>
+					{/if}
 				</div>
 
 				{#if item.provider || item.reference || item.phone || item.emergency_phone || item.cost != null || item.website}
@@ -210,8 +256,94 @@
 	{/if}
 </section>
 
+<!-- Service history -->
+<section class="mt-12 scroll-mt-20" id="history">
+	<div class="flex flex-wrap items-end justify-between gap-3">
+		<div>
+			<h2 class="section-title">Service history</h2>
+			{#if data.spending.allTime > 0}
+				<p class="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+					{formatMoney(data.spending.lastYear)} in the last 12 months · {formatMoney(data.spending.allTime)} in total
+				</p>
+			{/if}
+		</div>
+		{#if canEdit}<a href="/vehicles/{v.id}/history/new" class="btn-secondary">+ Add work</a>{/if}
+	</div>
+	{#if data.records.length}
+		<ol class="card mt-3 divide-y divide-zinc-100 dark:divide-zinc-800">
+			{#each visibleRecords as r (r.id)}
+				<li class="flex gap-4 px-5 py-3">
+					<div class="w-24 shrink-0 text-sm">
+						<p class="font-medium">{formatDate(r.date)}</p>
+						{#if r.mileage != null}<p class="text-xs text-zinc-500">{formatMiles(r.mileage)}</p>{/if}
+					</div>
+					<div class="min-w-0 flex-1">
+						<p class="text-sm font-medium">
+							{r.title}
+							{#if r.title !== recordKindLabel(r.kind)}<span class="ml-1 rounded bg-zinc-100 px-1.5 py-0.5 text-[10px] font-semibold text-zinc-600 uppercase dark:bg-zinc-800 dark:text-zinc-400">{recordKindLabel(r.kind)}</span>{/if}
+						</p>
+						<p class="text-xs text-zinc-500">
+							{[r.garage, r.cost != null ? formatMoney(r.cost) : null].filter(Boolean).join(' · ')}
+							{#each recordDocs(r.id) as d}{' · '}<a class="text-emerald-700 hover:underline dark:text-emerald-400" href="/vehicles/{v.id}/documents/{d.id}" target="_blank" rel="noopener">📎 {d.title}</a>{/each}
+						</p>
+						{#if r.notes}<p class="mt-1 text-sm whitespace-pre-line text-zinc-600 dark:text-zinc-400">{r.notes}</p>{/if}
+					</div>
+					{#if canEdit}<a href="/vehicles/{v.id}/history/{r.id}" class="btn-ghost h-fit px-3 py-1.5">Edit</a>{/if}
+				</li>
+			{/each}
+		</ol>
+		{#if data.records.length > 6}
+			<button class="mt-2 text-sm text-emerald-700 hover:underline dark:text-emerald-400" onclick={() => (showAllRecords = !showAllRecords)}>
+				{showAllRecords ? 'Show fewer' : `Show all ${data.records.length} entries`}
+			</button>
+		{/if}
+	{:else}
+		<p class="card mt-3 p-5 text-sm text-zinc-500">
+			Nothing recorded yet. Log services, repairs and new tyres here to build a full history, which is handy when you sell.
+		</p>
+	{/if}
+
+	{#if data.mileage.length}
+		<details class="card group mt-4">
+			<summary class="flex cursor-pointer list-none flex-wrap items-center gap-x-3 gap-y-1 px-5 py-3 text-sm select-none">
+				<span class="font-medium">Mileage</span>
+				<span class="text-zinc-500">{formatMiles(v.mileage)}{#if rate}{' · about '}{rate.toLocaleString('en-GB')} miles a year{/if}</span>
+				<span class="ml-auto text-xs text-zinc-400 group-open:hidden">{data.mileage.length} reading{data.mileage.length === 1 ? '' : 's'}</span>
+			</summary>
+			<ul class="grid gap-x-8 px-5 pb-4 text-sm sm:grid-cols-2">
+				{#each data.mileage.slice(0, 20) as m}
+					<li class="flex justify-between border-b border-zinc-100 py-1.5 dark:border-zinc-800">
+						<span class="text-zinc-500">{formatDate(m.date)} · {sourceLabel[m.source]}</span>
+						<span class="font-medium tabular-nums">{m.mileage.toLocaleString('en-GB')}</span>
+					</li>
+				{/each}
+			</ul>
+		</details>
+	{/if}
+</section>
+
+<!-- Documents -->
+<section class="mt-12 scroll-mt-20" id="documents">
+	<h2 class="section-title">Documents</h2>
+	{#if data.documents.length}
+		<div class="mt-3"><DocumentList vehicleId={v.id} documents={data.documents} {canEdit} {linkLabel} /></div>
+	{:else if !canEdit}
+		<p class="card mt-3 p-5 text-sm text-zinc-500">No documents uploaded.</p>
+	{/if}
+	{#if canEdit}
+		<div class="mt-3">
+			<UploadForm
+				accept={data.accept}
+				links={uploadLinks}
+				error={form && 'uploadError' in form ? form.uploadError : undefined}
+				success={form && 'uploadSuccess' in form ? form.uploadSuccess : undefined}
+			/>
+		</div>
+	{/if}
+</section>
+
 <!-- Vehicle details -->
-<section class="mt-12">
+<section class="mt-12 scroll-mt-20" id="details">
 	<h2 class="section-title">Details</h2>
 	<div class="card mt-3 p-5">
 		{#if details.length}
@@ -232,7 +364,7 @@
 
 <!-- MOT history (from DVSA) -->
 {#if tests.length}
-	<section class="mt-12">
+	<section class="mt-12 scroll-mt-20" id="mot">
 		<h2 class="section-title">MOT history</h2>
 		<ul class="card mt-3 divide-y divide-zinc-100 dark:divide-zinc-800">
 			{#each visibleTests as t (t.id)}

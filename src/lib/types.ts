@@ -57,6 +57,49 @@ export interface MotTest {
 	defects: string;
 }
 
+export interface ServiceRecord {
+	id: number;
+	vehicle_id: number;
+	date: string;
+	kind: string;
+	title: string;
+	mileage: number | null;
+	garage: string | null;
+	cost: number | null;
+	notes: string | null;
+	created_at: string;
+}
+
+export interface DocumentRow {
+	id: number;
+	vehicle_id: number;
+	item_id: number | null;
+	record_id: number | null;
+	title: string;
+	filename: string;
+	mime: string;
+	size: number;
+	created_at: string;
+}
+
+export interface ItemHistory {
+	id: number;
+	item_id: number;
+	provider: string | null;
+	reference: string | null;
+	start_date: string | null;
+	due_date: string | null;
+	cost: number | null;
+	excess: number | null;
+	renewed_at: string;
+}
+
+export interface MileageReading {
+	date: string;
+	mileage: number;
+	source: 'manual' | 'service' | 'mot';
+}
+
 export interface VehicleWithRole extends Vehicle {
 	role: VehicleRole;
 }
