@@ -88,5 +88,36 @@ export const migrations: string[] = [
 		key   TEXT PRIMARY KEY,
 		value TEXT NOT NULL
 	);
+	`,
+
+	/* 2: reminders and notification channels */ `
+	ALTER TABLE users ADD COLUMN reminders_enabled INTEGER NOT NULL DEFAULT 1;
+	ALTER TABLE users ADD COLUMN reminder_days TEXT NOT NULL DEFAULT '30,14,7,1';
+	ALTER TABLE users ADD COLUMN remind_overdue INTEGER NOT NULL DEFAULT 1;
+
+	CREATE TABLE notification_channels (
+		id           INTEGER PRIMARY KEY,
+		user_id      INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+		type         TEXT NOT NULL CHECK (type IN ('email', 'ntfy', 'gotify', 'discord', 'webhook')),
+		name         TEXT NOT NULL,
+		config       TEXT NOT NULL,
+		enabled      INTEGER NOT NULL DEFAULT 1,
+		last_error   TEXT,
+		last_sent_at TEXT,
+		created_at   TEXT NOT NULL DEFAULT (datetime('now'))
+	);
+	CREATE INDEX notification_channels_user ON notification_channels(user_id);
+
+	-- One row per reminder sent, so the same reminder is never sent twice.
+	-- due_key is the due date or mileage it was sent for, so renewing an item
+	-- (moving its date) starts a fresh set of reminders.
+	CREATE TABLE reminder_log (
+		user_id   INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+		item_id   INTEGER NOT NULL REFERENCES due_items(id) ON DELETE CASCADE,
+		due_key   TEXT NOT NULL,
+		threshold TEXT NOT NULL,
+		sent_at   TEXT NOT NULL DEFAULT (datetime('now')),
+		PRIMARY KEY (user_id, item_id, due_key, threshold)
+	);
 	`
 ];

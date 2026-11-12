@@ -1,4 +1,6 @@
-import { error, redirect, type Handle } from '@sveltejs/kit';
+import { error, redirect, type Handle, type ServerInit } from '@sveltejs/kit';
+import { db } from '$lib/server/db';
+import { startScheduler } from '$lib/server/notify/scheduler';
 import {
 	SESSION_COOKIE,
 	clearSessionCookie,
@@ -8,6 +10,12 @@ import {
 } from '$lib/server/auth';
 
 const PUBLIC_PATHS = ['/login', '/setup', '/api/health'];
+
+/** Runs once when the server starts: apply migrations, then start the reminder scheduler. */
+export const init: ServerInit = () => {
+	db();
+	startScheduler();
+};
 
 /**
  * Reject cross-site form posts. We can't pin a single ORIGIN (the app is reached by IP,
