@@ -10,7 +10,8 @@ import {
 	requireVehicle,
 	setMember
 } from '$lib/server/vehicles';
-import type { VehicleRole } from '$lib/types';
+import { lookupsConfigured, syncVehicle } from '$lib/server/lookup/sync';
+import type { MotTest, VehicleRole } from '$lib/types';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = ({ params, locals }) => {
@@ -18,7 +19,11 @@ export const load: PageServerLoad = ({ params, locals }) => {
 	return {
 		vehicle,
 		items: listItems([vehicle.id]),
-		members: vehicle.role === 'owner' ? listMembers(vehicle.id) : []
+		members: vehicle.role === 'owner' ? listMembers(vehicle.id) : [],
+		motTests: db()
+			.prepare('SELECT * FROM mot_tests WHERE vehicle_id = ? ORDER BY completed_at DESC')
+			.all(vehicle.id) as MotTest[],
+		lookupsEnabled: lookupsConfigured()
 	};
 };
 
@@ -27,6 +32,12 @@ const parseRole = (v: FormDataEntryValue | null): VehicleRole =>
 	ROLES.includes(v as VehicleRole) ? (v as VehicleRole) : 'viewer';
 
 export const actions: Actions = {
+	refresh: async ({ params, locals }) => {
+		const vehicle = requireVehicle(params.id, locals.user, 'editor');
+		if (!lookupsConfigured()) return fail(400, { refresh: { changes: [], errors: ['Lookups aren’t set up on this server.'] } });
+		return { refresh: await syncVehicle(vehicle.id) };
+	},
+
 	mileage: async ({ params, locals, request }) => {
 		const vehicle = requireVehicle(params.id, locals.user, 'editor');
 		const mileage = int(await request.formData(), 'mileage');

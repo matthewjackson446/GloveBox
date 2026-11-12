@@ -30,8 +30,31 @@ export interface Vehicle {
 	locking_wheel_nut_code: string | null;
 	notes: string | null;
 	archived: number;
+	auto_sync: number;
+	tax_status: string | null;
+	mot_status: string | null;
+	synced_at: string | null;
+	sync_error: string | null;
 	created_at: string;
 	updated_at: string;
+}
+
+export interface MotDefect {
+	type: string;
+	text: string;
+	dangerous: boolean;
+}
+
+export interface MotTest {
+	id: number;
+	vehicle_id: number;
+	test_number: string;
+	completed_at: string;
+	result: string;
+	expiry_date: string | null;
+	odometer: number | null;
+	odometer_unit: string | null;
+	defects: string;
 }
 
 export interface VehicleWithRole extends Vehicle {

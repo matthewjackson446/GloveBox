@@ -11,7 +11,7 @@
 	<a href="/vehicles/{data.vehicle.id}" class="text-sm text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100">← {data.vehicle.registration}</a>
 	<h1 class="mt-2 mb-6 text-2xl font-semibold tracking-tight">Edit vehicle</h1>
 
-	<VehicleForm vehicle={data.vehicle} values={form?.values} error={form?.error} submitLabel="Save changes" action="?/save" />
+	<VehicleForm vehicle={data.vehicle} values={form?.values} error={form?.error} submitLabel="Save changes" action="?/save" lookupEnabled={data.lookupsEnabled} />
 
 	{#if data.vehicle.role === 'owner'}
 		<section class="mt-12 rounded-2xl border border-red-200 p-6 dark:border-red-900/60">

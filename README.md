@@ -46,6 +46,26 @@ services:
 
 **Reminders:** in **Settings → Server**, an admin sets the daily send time, an optional public URL (for links in notifications) and SMTP details if anyone wants email. Each user then adds their own channels under **Settings → Reminders**.
 
+### Vehicle lookups (optional): DVLA and DVSA
+
+With your own free keys, typing a registration fills in the vehicle's details, and Glovebox refreshes **tax and MOT dates, MOT history and mileage every night** (just before reminders go out). Without keys, everything still works with dates entered by hand.
+
+**Glovebox doesn't ship with any keys.** Each install uses keys issued to whoever runs it; they're stored only in that install's `/config` database. Never commit or share them.
+
+**DVLA Vehicle Enquiry Service**: make, colour, fuel, engine, year, live tax status and due date, MOT expiry.
+1. Apply at [register-for-ves.driver-vehicle-licensing.api.gov.uk](https://register-for-ves.driver-vehicle-licensing.api.gov.uk/) ([about the API](https://developer-portal.driver-vehicle-licensing.api.gov.uk/apis/vehicle-enquiry-service/vehicle-enquiry-service-description.html)).
+2. Describe personal use, e.g. *"Self-hosted app to keep track of tax and MOT dates for my own household's vehicles"*, and choose the lowest monthly volume. Glovebox makes about one lookup per vehicle per day.
+3. DVLA emails you an API key, usually within a few working days.
+4. In Glovebox, open **Settings → Server → Vehicle lookups**, paste the key, save and press **Test DVLA**.
+
+**DVSA MOT History**: every MOT test with result, mileage, advisories and failures, plus model and first MOT due date.
+1. Apply at [documentation.history.mot.api.gov.uk/mot-history-api/register](https://documentation.history.mot.api.gov.uk/mot-history-api/register).
+2. DVSA emails you a **client ID, client secret, API key, scope URL and token URL**.
+3. Paste each into **Settings → Server → Vehicle lookups** (the scope is normally `https://tapi.dvsa.gov.uk/.default`, already filled in), save and press **Test DVSA**.
+4. Client secrets expire after **2 years**; keys unused for **90 days** are revoked. The nightly refresh keeps them in use.
+
+Glovebox never overwrites details you've typed. It only fills blanks, keeps tax/MOT due dates current (turn this off per vehicle with *Keep tax and MOT dates up to date automatically*), and only ever moves mileage forwards.
+
 **Backups:** stop the container, then copy `/config`. Alternatively, copy `glovebox.db` along with its `-wal` file while the container is running.
 
 ## Development
@@ -73,7 +93,7 @@ Pushing to `main` publishes `ghcr.io/<owner>/glovebox:edge`. Pushing a tag such 
 
 - [x] Vehicles, renewals and due dates, dashboard, emergency card, multi-user sharing
 - [x] Reminders by email (SMTP), ntfy, Gotify and Discord/webhooks
-- [ ] Look up by registration via DVLA (tax and MOT dates) and DVSA (MOT history)
+- [x] Look up by registration via DVLA (tax and MOT dates) and DVSA (MOT history), with nightly refresh
 - [ ] Service history, mileage log, document uploads (V5C, certificates, receipts)
 - [ ] Calendar (`.ics`) feed
 - [ ] Community Apps listing
