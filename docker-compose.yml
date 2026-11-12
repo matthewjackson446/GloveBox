@@ -1,0 +1,18 @@
+# Development / testing on Unraid via a remote Docker context:
+#   docker context create unraid --docker "host=ssh://root@<unraid-ip>"
+#   docker --context unraid compose up -d --build
+# The image is built ON Unraid, and the volume path below is an Unraid host path.
+services:
+  glovebox:
+    build: .
+    image: glovebox:dev
+    container_name: glovebox-dev
+    ports:
+      - "8090:8080"
+    environment:
+      - PUID=99
+      - PGID=100
+      - TZ=Europe/London
+    volumes:
+      - /mnt/user/appdata/glovebox-dev:/config
+    restart: unless-stopped
