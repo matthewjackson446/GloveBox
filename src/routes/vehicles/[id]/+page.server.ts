@@ -11,6 +11,9 @@ import {
 	setMember
 } from '$lib/server/vehicles';
 import { lookupsConfigured, syncVehicle } from '$lib/server/lookup/sync';
+import { ACCEPT, deleteDocument, listDocuments, saveDocument } from '$lib/server/documents';
+import { listRecords, mileageHistory, spending } from '$lib/server/history';
+import { todayISO } from '$lib/status';
 import type { MotTest, VehicleRole } from '$lib/types';
 import type { Actions, PageServerLoad } from './$types';
 
@@ -23,15 +26,46 @@ export const load: PageServerLoad = ({ params, locals }) => {
 		motTests: db()
 			.prepare('SELECT * FROM mot_tests WHERE vehicle_id = ? ORDER BY completed_at DESC')
 			.all(vehicle.id) as MotTest[],
-		lookupsEnabled: lookupsConfigured()
+		lookupsEnabled: lookupsConfigured(),
+		records: listRecords(vehicle.id),
+		documents: listDocuments(vehicle.id),
+		mileage: mileageHistory(vehicle.id),
+		spending: spending(vehicle.id),
+		accept: ACCEPT
 	};
 };
+
+/** "item:12" / "record:4" from the upload form's "Attach to" menu, checked against this vehicle. */
+function parseLink(vehicleId: number, link: FormDataEntryValue | null) {
+	const [kind, id] = String(link ?? '').split(':');
+	const n = Number(id);
+	if (kind === 'item' && listItems([vehicleId]).some((i) => i.id === n)) return { itemId: n, recordId: null };
+	if (kind === 'record' && listRecords(vehicleId).some((r) => r.id === n)) return { itemId: null, recordId: n };
+	return { itemId: null, recordId: null };
+}
 
 const ROLES: VehicleRole[] = ['owner', 'editor', 'viewer'];
 const parseRole = (v: FormDataEntryValue | null): VehicleRole =>
 	ROLES.includes(v as VehicleRole) ? (v as VehicleRole) : 'viewer';
 
 export const actions: Actions = {
+	uploadDocument: async ({ params, locals, request }) => {
+		const vehicle = requireVehicle(params.id, locals.user, 'editor');
+		const fd = await request.formData();
+		const file = fd.get('file');
+		if (!(file instanceof File)) return fail(400, { uploadError: 'Choose a file to upload.' });
+		const r = await saveDocument(vehicle.id, locals.user!.id, file, {
+			title: text(fd, 'title', 120),
+			...parseLink(vehicle.id, fd.get('link'))
+		});
+		return r.error ? fail(400, { uploadError: r.error }) : { uploadSuccess: 'Uploaded.' };
+	},
+
+	deleteDocument: async ({ params, locals, request }) => {
+		const vehicle = requireVehicle(params.id, locals.user, 'editor');
+		await deleteDocument(vehicle.id, Number((await request.formData()).get('docId')));
+	},
+
 	refresh: async ({ params, locals }) => {
 		const vehicle = requireVehicle(params.id, locals.user, 'editor');
 		if (!lookupsConfigured()) return fail(400, { refresh: { changes: [], errors: ['Lookups aren’t set up on this server.'] } });
@@ -42,9 +76,13 @@ export const actions: Actions = {
 		const vehicle = requireVehicle(params.id, locals.user, 'editor');
 		const mileage = int(await request.formData(), 'mileage');
 		if (mileage === null || mileage < 0) return fail(400, { mileageError: 'Enter a valid mileage.' });
+		// An exact value, so typos can be corrected downwards too; also kept as a reading.
 		db()
 			.prepare(`UPDATE vehicles SET mileage = ?, updated_at = datetime('now') WHERE id = ?`)
 			.run(mileage, vehicle.id);
+		db()
+			.prepare('INSERT INTO mileage_log (vehicle_id, date, mileage) VALUES (?, ?, ?)')
+			.run(vehicle.id, todayISO(), mileage);
 	},
 
 	share: async ({ params, locals, request }) => {

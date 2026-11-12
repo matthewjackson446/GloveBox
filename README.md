@@ -6,6 +6,8 @@ A self-hosted tracker for your vehicles: MOT, road tax, insurance, servicing, br
 - **Renewals and due dates.** Store providers, policy and membership numbers, phone numbers, premiums and excesses alongside the dates.
 - **Service by date or mileage.** Update the mileage and service reminders work out the rest.
 - **Reminders.** A daily digest by email, [ntfy](https://ntfy.sh), Gotify, Discord or webhook (e.g. Home Assistant). Each user picks when (60/30/14/7/3/1 days before, and when overdue) and where. You never get the same reminder twice, and renewing an item starts its reminders afresh.
+- **Service history and documents.** Log services, repairs and tyres with cost, garage and mileage. Upload PDFs and photos (V5C, certificates, receipts) and attach them to a renewal or a job. Mileage readings give an annual average and an estimated date for mileage-based services.
+- **Renew with price history.** Roll an insurance, breakdown, warranty or tax period on a year and see how the price compares with previous years.
 - **Emergency card.** A one-tap page with your breakdown line, insurer's claims line, policy numbers, locking wheel nut code and emergency contacts.
 - **Multi-user.** The admin creates accounts. Each vehicle can be shared with other users as *owner*, *can edit* or *can view*.
 - **One container, one SQLite file.** All data lives in `/config`.
@@ -66,7 +68,7 @@ With your own free keys, typing a registration fills in the vehicle's details, a
 
 Glovebox never overwrites details you've typed. It only fills blanks, keeps tax/MOT due dates current (turn this off per vehicle with *Keep tax and MOT dates up to date automatically*), and only ever moves mileage forwards.
 
-**Backups:** stop the container, then copy `/config`. Alternatively, copy `glovebox.db` along with its `-wal` file while the container is running.
+**Backups:** everything is in `/config`: the database (`glovebox.db`) and uploaded files (`documents/`). Stop the container and copy the folder, or include it in your appdata backup.
 
 ## Development
 
@@ -94,7 +96,7 @@ Pushing to `main` publishes `ghcr.io/<owner>/glovebox:edge`. Pushing a tag such 
 - [x] Vehicles, renewals and due dates, dashboard, emergency card, multi-user sharing
 - [x] Reminders by email (SMTP), ntfy, Gotify and Discord/webhooks
 - [x] Look up by registration via DVLA (tax and MOT dates) and DVSA (MOT history), with nightly refresh
-- [ ] Service history, mileage log, document uploads (V5C, certificates, receipts)
+- [x] Service history, mileage log, document uploads (V5C, certificates, receipts), renewals with price history
 - [ ] Calendar (`.ics`) feed
 - [ ] Community Apps listing
 

@@ -1,5 +1,6 @@
 import { fail, redirect } from '@sveltejs/kit';
 import { db } from '$lib/server/db';
+import { deleteVehicleFiles } from '$lib/server/documents';
 import { values } from '$lib/server/form';
 import { lookupsConfigured } from '$lib/server/lookup/sync';
 import { deleteVehicle, readVehicleForm, requireVehicle, updateVehicle } from '$lib/server/vehicles';
@@ -25,6 +26,7 @@ export const actions: Actions = {
 	delete: async ({ params, locals }) => {
 		const vehicle = requireVehicle(params.id, locals.user, 'owner');
 		deleteVehicle(vehicle.id);
+		await deleteVehicleFiles(vehicle.id);
 		redirect(303, '/');
 	}
 };

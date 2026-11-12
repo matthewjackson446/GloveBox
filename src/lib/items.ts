@@ -156,6 +156,13 @@ export const ITEM_TYPE_ORDER = [
 	'other'
 ] as const;
 
+/**
+ * Types that run in yearly periods and can be "renewed" (rolled on, keeping price history).
+ * MOTs and services are recorded in service history instead.
+ */
+export const RENEWABLE_TYPES = ['insurance', 'breakdown', 'warranty', 'tax', 'other'] as const;
+export const isRenewable = (type: string) => (RENEWABLE_TYPES as readonly string[]).includes(type);
+
 /** The types every vehicle is expected to have; shown as "missing" prompts. */
 export const CORE_TYPES = ['mot', 'tax', 'insurance', 'service'] as const;
 

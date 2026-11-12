@@ -141,5 +141,61 @@ export const migrations: string[] = [
 		UNIQUE (vehicle_id, test_number)
 	);
 	CREATE INDEX mot_tests_vehicle ON mot_tests(vehicle_id, completed_at);
+	`,
+
+	/* 4: service history, mileage log, documents, renewal history */ `
+	CREATE TABLE service_records (
+		id         INTEGER PRIMARY KEY,
+		vehicle_id INTEGER NOT NULL REFERENCES vehicles(id) ON DELETE CASCADE,
+		date       TEXT NOT NULL,
+		kind       TEXT NOT NULL DEFAULT 'service',
+		title      TEXT NOT NULL,
+		mileage    INTEGER,
+		garage     TEXT,
+		cost       REAL,
+		notes      TEXT,
+		created_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+		created_at TEXT NOT NULL DEFAULT (datetime('now')),
+		updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+	);
+	CREATE INDEX service_records_vehicle ON service_records(vehicle_id, date);
+
+	CREATE TABLE mileage_log (
+		id         INTEGER PRIMARY KEY,
+		vehicle_id INTEGER NOT NULL REFERENCES vehicles(id) ON DELETE CASCADE,
+		date       TEXT NOT NULL,
+		mileage    INTEGER NOT NULL,
+		created_at TEXT NOT NULL DEFAULT (datetime('now'))
+	);
+	CREATE INDEX mileage_log_vehicle ON mileage_log(vehicle_id, date);
+
+	CREATE TABLE documents (
+		id          INTEGER PRIMARY KEY,
+		vehicle_id  INTEGER NOT NULL REFERENCES vehicles(id) ON DELETE CASCADE,
+		item_id     INTEGER REFERENCES due_items(id) ON DELETE SET NULL,
+		record_id   INTEGER REFERENCES service_records(id) ON DELETE SET NULL,
+		title       TEXT NOT NULL,
+		filename    TEXT NOT NULL,
+		stored_name TEXT NOT NULL UNIQUE,
+		mime        TEXT NOT NULL,
+		size        INTEGER NOT NULL,
+		uploaded_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+		created_at  TEXT NOT NULL DEFAULT (datetime('now'))
+	);
+	CREATE INDEX documents_vehicle ON documents(vehicle_id);
+
+	-- A snapshot of a renewal item each time it is renewed, for price comparison.
+	CREATE TABLE item_history (
+		id         INTEGER PRIMARY KEY,
+		item_id    INTEGER NOT NULL REFERENCES due_items(id) ON DELETE CASCADE,
+		provider   TEXT,
+		reference  TEXT,
+		start_date TEXT,
+		due_date   TEXT,
+		cost       REAL,
+		excess     REAL,
+		renewed_at TEXT NOT NULL DEFAULT (datetime('now'))
+	);
+	CREATE INDEX item_history_item ON item_history(item_id);
 	`
 ];
