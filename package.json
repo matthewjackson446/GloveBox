@@ -13,7 +13,8 @@
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json"
 	},
 	"dependencies": {
-		"better-sqlite3": "^11.10.0"
+		"better-sqlite3": "^11.10.0",
+		"nodemailer": "^7.0.13"
 	},
 	"devDependencies": {
 		"@sveltejs/adapter-node": "^5.2.12",
@@ -22,6 +23,7 @@
 		"@tailwindcss/vite": "^4.1.7",
 		"@types/better-sqlite3": "^7.6.13",
 		"@types/node": "^22.15.0",
+		"@types/nodemailer": "^8.0.2",
 		"svelte": "^5.33.0",
 		"svelte-check": "^4.2.1",
 		"tailwindcss": "^4.1.7",

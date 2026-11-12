@@ -8,18 +8,101 @@ import {
 	verifyPassword
 } from '$lib/server/auth';
 import { db } from '$lib/server/db';
-import { bad, ok, text } from '$lib/server/form';
+import { bad, ok, text, values } from '$lib/server/form';
+import {
+	createChannel,
+	deleteChannel,
+	deliver,
+	getChannel,
+	listChannels,
+	parseChannelForm,
+	setChannelEnabled,
+	summarise
+} from '$lib/server/notify/channels';
+import { DAY_CHOICES, buildMessage, parseDays, pendingReminders } from '$lib/server/notify/reminders';
+import { getSmtp } from '$lib/server/settings';
 import type { Contact } from '$lib/types';
 import type { Actions, PageServerLoad } from './$types';
 
+interface ReminderPrefs {
+	reminders_enabled: number;
+	reminder_days: string;
+	remind_overdue: number;
+}
+
 export const load: PageServerLoad = ({ locals }) => {
+	const userId = locals.user!.id;
 	const contacts = db()
 		.prepare('SELECT * FROM contacts WHERE user_id = ? ORDER BY id')
-		.all(locals.user!.id) as Contact[];
-	return { contacts };
+		.all(userId) as Contact[];
+	const prefs = db()
+		.prepare('SELECT reminders_enabled, reminder_days, remind_overdue FROM users WHERE id = ?')
+		.get(userId) as ReminderPrefs;
+	return {
+		contacts,
+		reminders: {
+			enabled: prefs.reminders_enabled === 1,
+			days: parseDays(prefs.reminder_days),
+			overdue: prefs.remind_overdue === 1,
+			choices: [...DAY_CHOICES]
+		},
+		channels: listChannels(userId).map(summarise),
+		emailAvailable: getSmtp() !== null
+	};
 };
 
 export const actions: Actions = {
+	reminderPrefs: async ({ request, locals }) => {
+		const fd = await request.formData();
+		const days = parseDays(fd.getAll('days').join(','));
+		const enabled = fd.get('enabled') === 'on';
+		if (enabled && days.length === 0 && fd.get('overdue') !== 'on')
+			return fail(400, { reminders: bad('Pick at least one reminder time.') });
+		db()
+			.prepare('UPDATE users SET reminders_enabled = ?, reminder_days = ?, remind_overdue = ? WHERE id = ?')
+			.run(enabled ? 1 : 0, days.join(','), fd.get('overdue') === 'on' ? 1 : 0, locals.user!.id);
+		return { reminders: ok('Reminder settings saved.') };
+	},
+
+	addChannel: async ({ request, locals }) => {
+		const fd = await request.formData();
+		const parsed = parseChannelForm(fd);
+		if ('error' in parsed) return fail(400, { channel: bad(parsed.error, values(fd)) });
+		createChannel(locals.user!.id, parsed.type, parsed.name, parsed.config);
+		return { channel: ok(`${parsed.name} added. Send a test to check it works.`) };
+	},
+
+	testChannel: async ({ request, locals }) => {
+		const id = Number((await request.formData()).get('id'));
+		const channel = getChannel(id, locals.user!.id);
+		if (!channel) return fail(404, { channelRow: bad('Channel not found.') });
+
+		// Send a real preview of what's coming up, or a simple test if nothing is due.
+		const user = db()
+			.prepare('SELECT id, name, reminders_enabled, reminder_days, remind_overdue FROM users WHERE id = ?')
+			.get(locals.user!.id) as Parameters<typeof pendingReminders>[0];
+		const pending = pendingReminders({ ...user, reminder_days: '60,30,14,7,3,1', remind_overdue: 1 });
+		const message = pending.length
+			? { ...buildMessage(pending), title: `[Test] ${buildMessage(pending).title}` }
+			: {
+					title: 'Glovebox test notification',
+					text: 'If you can read this, reminders will reach you here. Nothing is due in the next 60 days.'
+				};
+		const result = await deliver(channel, message);
+		return result.ok
+			? { channelRow: ok(`Test sent to ${channel.name}.`) }
+			: fail(502, { channelRow: bad(`${channel.name}: ${result.error}`) });
+	},
+
+	toggleChannel: async ({ request, locals }) => {
+		const fd = await request.formData();
+		setChannelEnabled(Number(fd.get('id')), locals.user!.id, fd.get('enabled') === 'true');
+	},
+
+	deleteChannel: async ({ request, locals }) => {
+		deleteChannel(Number((await request.formData()).get('id')), locals.user!.id);
+	},
+
 	profile: async ({ request, locals }) => {
 		const fd = await request.formData();
 		const name = text(fd, 'name', 80);
