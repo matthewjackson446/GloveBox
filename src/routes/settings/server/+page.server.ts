@@ -1,5 +1,15 @@
 import { error, fail } from '@sveltejs/kit';
+import { formatDate } from '$lib/format';
+import { db } from '$lib/server/db';
 import { bad, int, ok, text, values } from '$lib/server/form';
+import {
+	DEFAULT_DVSA_SCOPE,
+	LookupError,
+	dvlaConfigured,
+	dvlaLookup,
+	dvsaConfigured,
+	dvsaLookup
+} from '$lib/server/lookup/clients';
 import { sendTestEmail } from '$lib/server/notify/channels';
 import { runReminders } from '$lib/server/notify/reminders';
 import { LAST_RUN_KEY } from '$lib/server/notify/scheduler';
@@ -34,9 +44,36 @@ export const load: PageServerLoad = ({ locals }) => {
 		publicUrl: publicUrl() ?? '',
 		reminderHour: reminderHour(),
 		lastRun: getSetting(LAST_RUN_KEY),
-		timezone: process.env.TZ ?? Intl.DateTimeFormat().resolvedOptions().timeZone
+		timezone: process.env.TZ ?? Intl.DateTimeFormat().resolvedOptions().timeZone,
+		lookups: {
+			dvla: { configured: dvlaConfigured() },
+			dvsa: {
+				configured: dvsaConfigured(),
+				clientId: getSetting('dvsa_client_id') ?? '',
+				hasSecret: !!getSetting('dvsa_client_secret'),
+				hasApiKey: !!getSetting('dvsa_api_key'),
+				tokenUrl: getSetting('dvsa_token_url') ?? '',
+				scope: getSetting('dvsa_scope') ?? DEFAULT_DVSA_SCOPE
+			},
+			testReg:
+				(
+					db()
+						.prepare(
+							`SELECT v.registration FROM vehicles v JOIN vehicle_users vu ON vu.vehicle_id = v.id
+							 WHERE vu.user_id = ? ORDER BY v.id LIMIT 1`
+						)
+						.get(locals.user!.id) as { registration: string } | undefined
+				)?.registration ?? ''
+		}
 	};
 };
+
+/** Secret fields: blank keeps the saved value, the "remove" box clears it. */
+function secret(fd: FormData, field: string, key: string): Record<string, string | null> {
+	if (fd.get(`clear_${field}`) === 'on') return { [key]: null };
+	const v = ((fd.get(field) as string | null) ?? '').trim();
+	return v ? { [key]: v } : {};
+}
 
 const SECURITY: SmtpSecurity[] = ['starttls', 'tls', 'none'];
 
@@ -98,6 +135,54 @@ export const actions: Actions = {
 			return { test: ok(`Test email sent to ${me.email}.`) };
 		} catch (e) {
 			return fail(502, { test: bad(`Couldn’t send: ${(e as Error).message}`) });
+		}
+	},
+
+	saveLookups: async ({ request, locals }) => {
+		requireAdmin(locals);
+		const fd = await request.formData();
+		const tokenUrl = text(fd, 'dvsa_token_url', 300);
+		// Real token URLs are always https; localhost is allowed for testing against a mock.
+		if (tokenUrl && !/^(https:\/\/|http:\/\/(localhost|127\.0\.0\.1)[:/])/.test(tokenUrl))
+			return fail(400, { lookups: bad('The DVSA token URL should start with https://') });
+		setSettings({
+			...secret(fd, 'dvla_api_key', 'dvla_api_key'),
+			dvsa_client_id: text(fd, 'dvsa_client_id', 200),
+			...secret(fd, 'dvsa_client_secret', 'dvsa_client_secret'),
+			...secret(fd, 'dvsa_api_key', 'dvsa_api_key'),
+			dvsa_token_url: tokenUrl,
+			dvsa_scope: text(fd, 'dvsa_scope', 200) ?? DEFAULT_DVSA_SCOPE
+		});
+		return { lookups: ok('Lookup settings saved.') };
+	},
+
+	testLookup: async ({ request, locals }) => {
+		requireAdmin(locals);
+		const fd = await request.formData();
+		const service = fd.get('service');
+		const reg = text(fd, 'reg', 16);
+		if (!reg) return fail(400, { lookupTest: bad('Enter a registration to test with.') });
+		try {
+			if (service === 'dvla') {
+				const r = await dvlaLookup(reg);
+				return {
+					lookupTest: ok(
+						r
+							? `DVLA works: ${[r.colour, r.make].filter(Boolean).join(' ')}, tax ${r.taxStatus ?? 'unknown'}${r.taxDueDate ? ` (due ${formatDate(r.taxDueDate)})` : ''}, MOT ${r.motStatus ?? 'unknown'}${r.motExpiry ? ` (expires ${formatDate(r.motExpiry)})` : ''}.`
+							: 'DVLA works, but has no record of that registration.'
+					)
+				};
+			}
+			const r = await dvsaLookup(reg);
+			return {
+				lookupTest: ok(
+					r
+						? `DVSA works: ${[r.make, r.model].filter(Boolean).join(' ')}, ${r.motTests?.length ?? 0} MOT test(s) on record.`
+						: 'DVSA works, but has no MOT record for that registration (it may be too new).'
+				)
+			};
+		} catch (e) {
+			return fail(502, { lookupTest: bad(e instanceof LookupError ? e.message : `Test failed: ${(e as Error).message}`) });
 		}
 	},
 

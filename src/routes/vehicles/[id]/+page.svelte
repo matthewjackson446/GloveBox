@@ -3,7 +3,8 @@
 	import Plate from '$lib/components/Plate.svelte';
 	import StatusDot from '$lib/components/StatusDot.svelte';
 	import StatusText from '$lib/components/StatusText.svelte';
-	import { formatDate, formatMiles, formatMoney, telHref, vehicleName, websiteHref } from '$lib/format';
+	import { formatDate, formatMiles, formatMoney, formatTimestamp, telHref, vehicleName, websiteHref } from '$lib/format';
+	import type { MotDefect } from '$lib/types';
 	import { CORE_TYPES, ITEM_TYPES, ITEM_TYPE_ORDER, itemTitle } from '$lib/items';
 	import { compareStates, itemState } from '$lib/status';
 
@@ -46,6 +47,28 @@
 	};
 
 	let editingMileage = $state(false);
+	let refreshing = $state(false);
+	let showAllTests = $state(false);
+
+	const tests = $derived(
+		data.motTests.map((t) => {
+			const defects = JSON.parse(t.defects) as MotDefect[];
+			return {
+				...t,
+				passed: /^PASS/i.test(t.result),
+				defects,
+				advisories: defects.filter((d) => /ADVISORY|MINOR/i.test(d.type)).length,
+				failures: defects.filter((d) => !/ADVISORY|MINOR/i.test(d.type)).length
+			};
+		})
+	);
+	const visibleTests = $derived(showAllTests ? tests : tests.slice(0, 5));
+	const defectStyle = (d: MotDefect) =>
+		d.dangerous || /DANGEROUS/i.test(d.type)
+			? 'bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-300'
+			: /FAIL|MAJOR|PRS/i.test(d.type)
+				? 'bg-orange-100 text-orange-800 dark:bg-orange-950 dark:text-orange-300'
+				: 'bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300';
 	const roleLabels = { owner: 'Owner', editor: 'Can edit', viewer: 'Can view' };
 </script>
 
@@ -89,6 +112,45 @@
 		{#if canEdit}<a href="/vehicles/{v.id}/edit" class="btn-secondary">Edit</a>{/if}
 	</div>
 </header>
+
+{#if data.lookupsEnabled}
+	<div class="mt-5 flex flex-wrap items-center gap-x-3 gap-y-2 text-sm">
+		{#if v.tax_status && v.tax_status !== 'Taxed'}
+			<span class="rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-semibold text-red-800 dark:bg-red-950 dark:text-red-300">DVLA: {v.tax_status}</span>
+		{/if}
+		{#if v.mot_status === 'Not valid'}
+			<span class="rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-semibold text-red-800 dark:bg-red-950 dark:text-red-300">DVLA: no valid MOT</span>
+		{/if}
+		<span class="text-zinc-500 dark:text-zinc-400">
+			{v.synced_at ? `Checked with DVLA/DVSA ${formatTimestamp(v.synced_at)}` : 'Not checked with DVLA/DVSA yet'}{v.auto_sync ? '' : ' · auto-update off'}
+		</span>
+		{#if canEdit}
+			<form
+				method="POST"
+				action="?/refresh"
+				use:enhance={() => {
+					refreshing = true;
+					return async ({ update }) => {
+						await update({ reset: false });
+						refreshing = false;
+					};
+				}}
+			>
+				<button class="text-emerald-700 hover:underline disabled:opacity-50 dark:text-emerald-400" disabled={refreshing}>{refreshing ? 'Checking…' : 'Check now'}</button>
+			</form>
+		{/if}
+	</div>
+	{#if form && 'refresh' in form && form.refresh}
+		{#if form.refresh.changes.length}
+			<div class="alert-success mt-3"><ul class="list-disc pl-5">{#each form.refresh.changes as c}<li>{c}</li>{/each}</ul></div>
+		{:else if !form.refresh.errors.length}
+			<p class="alert-success mt-3">Everything’s already up to date.</p>
+		{/if}
+		{#if form.refresh.errors.length}<p class="alert-error mt-3">{form.refresh.errors.join(' ')}</p>{/if}
+	{:else if v.sync_error}
+		<p class="mt-2 text-sm text-amber-700 dark:text-amber-400">Last check had a problem: {v.sync_error}</p>
+	{/if}
+{/if}
 
 <!-- Renewals & due dates -->
 <section class="mt-10">
@@ -167,6 +229,49 @@
 		{#if v.notes}<p class="mt-4 text-sm whitespace-pre-line text-zinc-600 dark:text-zinc-400">{v.notes}</p>{/if}
 	</div>
 </section>
+
+<!-- MOT history (from DVSA) -->
+{#if tests.length}
+	<section class="mt-12">
+		<h2 class="section-title">MOT history</h2>
+		<ul class="card mt-3 divide-y divide-zinc-100 dark:divide-zinc-800">
+			{#each visibleTests as t (t.id)}
+				<li>
+					<details class="group">
+						<summary class="flex cursor-pointer list-none flex-wrap items-center gap-x-4 gap-y-1 px-5 py-3 select-none hover:bg-zinc-50 dark:hover:bg-zinc-800/40">
+							<span class="w-28 text-sm font-medium">{formatDate(t.completed_at.slice(0, 10))}</span>
+							<span class="rounded-full px-2.5 py-0.5 text-xs font-semibold {t.passed ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300' : 'bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-300'}">{t.passed ? 'Pass' : 'Fail'}</span>
+							<span class="text-sm text-zinc-500 dark:text-zinc-400">{t.odometer != null ? `${t.odometer.toLocaleString('en-GB')} ${t.odometer_unit?.toUpperCase().startsWith('K') ? 'km' : 'mi'}` : 'Mileage not recorded'}</span>
+							<span class="ml-auto text-xs text-zinc-500">
+								{#if t.failures}<span class="text-red-600 dark:text-red-400">{t.failures} fail{t.failures === 1 ? '' : 's'}</span>{#if t.advisories}{' · '}{/if}{/if}
+								{#if t.advisories}{t.advisories} advisor{t.advisories === 1 ? 'y' : 'ies'}{/if}
+								{#if !t.defects.length}No advisories{/if}
+							</span>
+						</summary>
+						<div class="px-5 pb-4 text-sm">
+							{#if t.expiry_date}<p class="text-zinc-500">Valid until {formatDate(t.expiry_date)} · Test no. {t.test_number}</p>{/if}
+							{#if t.defects.length}
+								<ul class="mt-2 space-y-1.5">
+									{#each t.defects as d}
+										<li class="flex gap-2">
+											<span class="h-fit shrink-0 rounded px-1.5 py-0.5 text-[10px] font-semibold tracking-wide uppercase {defectStyle(d)}">{d.dangerous ? 'Dangerous' : d.type.toLowerCase()}</span>
+											<span>{d.text}</span>
+										</li>
+									{/each}
+								</ul>
+							{/if}
+						</div>
+					</details>
+				</li>
+			{/each}
+		</ul>
+		{#if tests.length > 5}
+			<button class="mt-2 text-sm text-emerald-700 hover:underline dark:text-emerald-400" onclick={() => (showAllTests = !showAllTests)}>
+				{showAllTests ? 'Show fewer' : `Show all ${tests.length} tests`}
+			</button>
+		{/if}
+	</section>
+{/if}
 
 <!-- Sharing -->
 {#if isOwner}

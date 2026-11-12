@@ -7,14 +7,24 @@
 		values,
 		error,
 		submitLabel,
-		action
+		action,
+		lookupEnabled = false,
+		lookupFacts,
+		lookupWarnings
 	}: {
 		vehicle?: Partial<Vehicle>;
 		values?: Record<string, string>;
 		error?: string;
 		submitLabel: string;
 		action?: string;
+		/** DVLA/DVSA keys are configured on this server. */
+		lookupEnabled?: boolean;
+		lookupFacts?: string[];
+		lookupWarnings?: string[];
 	} = $props();
+
+	const autoSyncChecked = $derived(values ? values.auto_sync === "on" : (vehicle?.auto_sync ?? 1) === 1);
+	const isNew = $derived(!vehicle?.id);
 
 	/** After a failed submit, show what the user typed; otherwise the saved vehicle. */
 	const v = (key: keyof Vehicle) => values?.[key] ?? vehicle?.[key] ?? '';
@@ -36,13 +46,26 @@
 	}}
 >
 	{#if error}<p class="alert-error" role="alert">{error}</p>{/if}
+	{#if lookupFacts?.length}
+		<div class="alert-success" role="status">
+			<p class="font-medium">Found it. Check the details below, then add the vehicle.</p>
+			<ul class="mt-1 list-disc pl-5">{#each lookupFacts as fact}<li>{fact}</li>{/each}</ul>
+			{#if lookupWarnings?.length}<p class="mt-2 text-amber-800 dark:text-amber-300">{lookupWarnings.join(" ")}</p>{/if}
+		</div>
+	{/if}
 
 	<section class="card p-6">
 		<h2 class="section-title">Vehicle</h2>
 		<div class="mt-4 grid gap-4 sm:grid-cols-2">
 			<div>
 				<label class="label" for="registration">Registration <span class="text-red-500">*</span></label>
-				<input class="input font-semibold uppercase" id="registration" name="registration" required maxlength="16" placeholder="AB12 CDE" value={v('registration')} />
+				<div class="flex gap-2">
+					<input class="input font-semibold uppercase" id="registration" name="registration" required maxlength="16" placeholder="AB12 CDE" value={v('registration')} />
+					{#if lookupEnabled && isNew}
+						<button class="btn-secondary shrink-0" formaction="?/lookup" formnovalidate disabled={busy}>Look up</button>
+					{/if}
+				</div>
+				{#if lookupEnabled && isNew}<p class="mt-1.5 text-xs text-zinc-500">Fills in the details from DVLA and DVSA.</p>{/if}
 			</div>
 			<div>
 				<label class="label" for="nickname">Nickname</label>
@@ -133,6 +156,17 @@
 			</div>
 		</div>
 	</section>
+
+	{#if lookupEnabled}
+		<input type="hidden" name="auto_sync_shown" value="1" />
+		<label class="card flex items-start gap-3 p-4">
+			<input type="checkbox" name="auto_sync" checked={autoSyncChecked} class="mt-0.5 size-4 accent-emerald-600" />
+			<span class="text-sm">
+				<span class="font-medium">Keep tax and MOT dates up to date automatically</span>
+				<span class="block text-zinc-500 dark:text-zinc-400">Checks DVLA and DVSA every night and updates the dates, MOT history and mileage. Details you’ve typed are never overwritten.</span>
+			</span>
+		</label>
+	{/if}
 
 	<div class="flex justify-end gap-3">
 		<a href={vehicle?.id ? `/vehicles/${vehicle.id}` : '/'} class="btn-ghost">Cancel</a>

@@ -1,5 +1,6 @@
 import { todayISO } from '$lib/status';
 import { getSetting, reminderHour, setSettings } from '../settings';
+import { syncAllVehicles } from '../lookup/sync';
 import { runReminders } from './reminders';
 
 export const LAST_RUN_KEY = 'reminders_last_run';
@@ -23,6 +24,16 @@ export function startScheduler() {
 			const today = todayISO(now);
 			if (now.getHours() < reminderHour() || getSetting(LAST_RUN_KEY) === today) return;
 			setSettings({ [LAST_RUN_KEY]: today });
+
+			// Refresh tax/MOT dates from DVLA/DVSA first, so reminders use current dates.
+			try {
+				const sync = await syncAllVehicles();
+				if (sync.vehicles)
+					console.log(`[glovebox] DVLA/DVSA refresh: ${sync.vehicles} vehicle(s), ${sync.changed} changed, ${sync.failed} with errors`);
+			} catch (e) {
+				console.error('[glovebox] DVLA/DVSA refresh failed', e);
+			}
+
 			const s = await runReminders(today);
 			console.log(
 				`[glovebox] reminders: ${s.reminders} for ${s.users} user(s), ${s.delivered} delivered, ${s.failed} failed`

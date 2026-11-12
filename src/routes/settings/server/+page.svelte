@@ -1,6 +1,8 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import { formatDate } from '$lib/format';
+	import KeyGuide from '$lib/components/KeyGuide.svelte';
+	import { DVLA_GUIDE, DVSA_GUIDE } from '$lib/lookupGuide';
 
 	let { data, form } = $props();
 
@@ -95,6 +97,92 @@
 
 	<button class="btn-primary" disabled={busy === 'save'}>{busy === 'save' ? 'Saving…' : 'Save server settings'}</button>
 </form>
+
+<section class="mt-10" id="lookups">
+	<h2 class="text-lg font-semibold tracking-tight">Vehicle lookups <span class="text-sm font-normal text-zinc-500">(optional)</span></h2>
+	<p class="mt-1 max-w-3xl text-sm text-zinc-500 dark:text-zinc-400">
+		With these, typing a registration fills in the vehicle’s details, and Glovebox keeps tax and MOT dates up to date by itself every night.
+		Both are free, but Glovebox doesn’t come with keys: each install uses keys issued to whoever runs it. Without them, everything still works with dates entered by hand.
+	</p>
+
+	{#if form?.lookups?.error}<p class="alert-error mt-4">{form.lookups.error}</p>{/if}
+	{#if form?.lookups?.success}<p class="alert-success mt-4">{form.lookups.success}</p>{/if}
+
+	<form method="POST" action="?/saveLookups" use:enhance={track('lookups')} class="mt-4 space-y-6">
+		<div class="card p-6">
+			<div class="flex items-center justify-between gap-4">
+				<h3 class="font-semibold">{DVLA_GUIDE.title}</h3>
+				<span class="text-xs font-medium {data.lookups.dvla.configured ? 'text-emerald-700 dark:text-emerald-400' : 'text-zinc-500'}">{data.lookups.dvla.configured ? '● Connected' : '○ Not set up'}</span>
+			</div>
+			<p class="mt-1 text-sm text-zinc-500 dark:text-zinc-400">{DVLA_GUIDE.gives}</p>
+			<KeyGuide guide={DVLA_GUIDE} open={!data.lookups.dvla.configured} />
+			<div class="mt-4">
+				<label class="label" for="dvla_api_key">API key</label>
+				<input class="input font-mono" id="dvla_api_key" name="dvla_api_key" type="password" autocomplete="off" placeholder={data.lookups.dvla.configured ? '•••••••• (saved, leave blank to keep)' : 'Paste the key from DVLA’s email'} />
+				{#if data.lookups.dvla.configured}
+					<label class="mt-1.5 flex items-center gap-2 text-xs text-zinc-500"><input type="checkbox" name="clear_dvla_api_key" class="accent-emerald-600" /> Remove saved key</label>
+				{/if}
+			</div>
+		</div>
+
+		<div class="card p-6">
+			<div class="flex items-center justify-between gap-4">
+				<h3 class="font-semibold">{DVSA_GUIDE.title}</h3>
+				<span class="text-xs font-medium {data.lookups.dvsa.configured ? 'text-emerald-700 dark:text-emerald-400' : 'text-zinc-500'}">{data.lookups.dvsa.configured ? '● Connected' : '○ Not set up'}</span>
+			</div>
+			<p class="mt-1 text-sm text-zinc-500 dark:text-zinc-400">{DVSA_GUIDE.gives}</p>
+			<KeyGuide guide={DVSA_GUIDE} open={!data.lookups.dvsa.configured} />
+			<div class="mt-4 grid gap-4 sm:grid-cols-2">
+				<div>
+					<label class="label" for="dvsa_client_id">Client ID</label>
+					<input class="input font-mono" id="dvsa_client_id" name="dvsa_client_id" autocomplete="off" value={data.lookups.dvsa.clientId} />
+				</div>
+				<div>
+					<label class="label" for="dvsa_client_secret">Client secret</label>
+					<input class="input font-mono" id="dvsa_client_secret" name="dvsa_client_secret" type="password" autocomplete="off" placeholder={data.lookups.dvsa.hasSecret ? '•••••••• (saved, leave blank to keep)' : ''} />
+					{#if data.lookups.dvsa.hasSecret}<label class="mt-1.5 flex items-center gap-2 text-xs text-zinc-500"><input type="checkbox" name="clear_dvsa_client_secret" class="accent-emerald-600" /> Remove</label>{/if}
+				</div>
+				<div>
+					<label class="label" for="dvsa_api_key">API key</label>
+					<input class="input font-mono" id="dvsa_api_key" name="dvsa_api_key" type="password" autocomplete="off" placeholder={data.lookups.dvsa.hasApiKey ? '•••••••• (saved, leave blank to keep)' : ''} />
+					{#if data.lookups.dvsa.hasApiKey}<label class="mt-1.5 flex items-center gap-2 text-xs text-zinc-500"><input type="checkbox" name="clear_dvsa_api_key" class="accent-emerald-600" /> Remove</label>{/if}
+				</div>
+				<div>
+					<label class="label" for="dvsa_scope">Scope URL</label>
+					<input class="input font-mono" id="dvsa_scope" name="dvsa_scope" value={data.lookups.dvsa.scope} />
+				</div>
+				<div class="sm:col-span-2">
+					<label class="label" for="dvsa_token_url">Token URL</label>
+					<input class="input font-mono" id="dvsa_token_url" name="dvsa_token_url" inputmode="url" placeholder="https://login.microsoftonline.com/…/oauth2/v2.0/token" value={data.lookups.dvsa.tokenUrl} />
+					<p class="mt-1.5 text-xs text-zinc-500">Copy it exactly from DVSA’s email.</p>
+				</div>
+			</div>
+		</div>
+
+		<button class="btn-primary" disabled={busy === 'lookups'}>{busy === 'lookups' ? 'Saving…' : 'Save lookup settings'}</button>
+	</form>
+
+	{#if data.lookups.dvla.configured || data.lookups.dvsa.configured}
+		<div class="card mt-6 p-6">
+			<h3 class="font-semibold">Test a lookup</h3>
+			<form method="POST" action="?/testLookup" use:enhance={track('test-lookup')} class="mt-3 flex flex-wrap items-end gap-2">
+				<div>
+					<label class="label" for="test-reg">Registration</label>
+					<input class="input w-40 font-semibold uppercase" id="test-reg" name="reg" value={data.lookups.testReg} placeholder="AB12 CDE" />
+				</div>
+				{#if data.lookups.dvla.configured}
+					<button class="btn-secondary" name="service" value="dvla" disabled={busy === 'test-lookup'}>Test DVLA</button>
+				{/if}
+				{#if data.lookups.dvsa.configured}
+					<button class="btn-secondary" name="service" value="dvsa" disabled={busy === 'test-lookup'}>Test DVSA</button>
+				{/if}
+				{#if busy === 'test-lookup'}<span class="pb-2 text-sm text-zinc-500">Testing…</span>{/if}
+			</form>
+			{#if form?.lookupTest?.error}<p class="alert-error mt-4">{form.lookupTest.error}</p>{/if}
+			{#if form?.lookupTest?.success}<p class="alert-success mt-4">{form.lookupTest.success}</p>{/if}
+		</div>
+	{/if}
+</section>
 
 <section class="card mt-8 p-6">
 	<h2 class="font-semibold">Check it works</h2>

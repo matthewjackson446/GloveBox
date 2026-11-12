@@ -119,5 +119,27 @@ export const migrations: string[] = [
 		sent_at   TEXT NOT NULL DEFAULT (datetime('now')),
 		PRIMARY KEY (user_id, item_id, due_key, threshold)
 	);
+	`,
+
+	/* 3: DVLA / DVSA lookups */ `
+	ALTER TABLE vehicles ADD COLUMN auto_sync  INTEGER NOT NULL DEFAULT 1;
+	ALTER TABLE vehicles ADD COLUMN tax_status TEXT;
+	ALTER TABLE vehicles ADD COLUMN mot_status TEXT;
+	ALTER TABLE vehicles ADD COLUMN synced_at  TEXT;
+	ALTER TABLE vehicles ADD COLUMN sync_error TEXT;
+
+	CREATE TABLE mot_tests (
+		id            INTEGER PRIMARY KEY,
+		vehicle_id    INTEGER NOT NULL REFERENCES vehicles(id) ON DELETE CASCADE,
+		test_number   TEXT NOT NULL,
+		completed_at  TEXT NOT NULL,
+		result        TEXT NOT NULL,
+		expiry_date   TEXT,
+		odometer      INTEGER,
+		odometer_unit TEXT,
+		defects       TEXT NOT NULL DEFAULT '[]',
+		UNIQUE (vehicle_id, test_number)
+	);
+	CREATE INDEX mot_tests_vehicle ON mot_tests(vehicle_id, completed_at);
 	`
 ];
