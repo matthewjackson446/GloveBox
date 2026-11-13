@@ -19,6 +19,14 @@
 	};
 </script>
 
+{#snippet saveRow(service: string, label: string)}
+	<div class="mt-5 flex flex-wrap items-center gap-3">
+		<button class="btn-primary" disabled={busy === service}>{busy === service ? 'Saving…' : label}</button>
+		{#if form?.lookupsService === service && form?.lookups?.error}<p class="text-sm text-red-600 dark:text-red-400">{form.lookups.error}</p>{/if}
+		{#if form?.lookupsService === service && form?.lookups?.success}<p class="text-sm text-emerald-700 dark:text-emerald-400">✓ {form.lookups.success}</p>{/if}
+	</div>
+{/snippet}
+
 <svelte:head><title>Server settings · Glovebox</title></svelte:head>
 
 <a href="/settings" class="text-sm text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100">← Settings</a>
@@ -105,11 +113,9 @@
 		Both are free, but Glovebox doesn’t come with keys: each install uses keys issued to whoever runs it. Without them, everything still works with dates entered by hand.
 	</p>
 
-	{#if form?.lookups?.error}<p class="alert-error mt-4">{form.lookups.error}</p>{/if}
-	{#if form?.lookups?.success}<p class="alert-success mt-4">{form.lookups.success}</p>{/if}
-
-	<form method="POST" action="?/saveLookups" use:enhance={track('lookups')} class="mt-4 space-y-6">
-		<div class="card p-6">
+	<div class="mt-4 space-y-6">
+		<form method="POST" action="?/saveLookups" use:enhance={track('dvla')} class="card p-6">
+			<input type="hidden" name="service" value="dvla" />
 			<div class="flex items-center justify-between gap-4">
 				<h3 class="font-semibold">{DVLA_GUIDE.title}</h3>
 				<span class="text-xs font-medium {data.lookups.dvla.configured ? 'text-emerald-700 dark:text-emerald-400' : 'text-zinc-500'}">{data.lookups.dvla.configured ? '● Connected' : '○ Not set up'}</span>
@@ -123,9 +129,11 @@
 					<label class="mt-1.5 flex items-center gap-2 text-xs text-zinc-500"><input type="checkbox" name="clear_dvla_api_key" class="accent-emerald-600" /> Remove saved key</label>
 				{/if}
 			</div>
-		</div>
+			{@render saveRow('dvla', 'Save DVLA key')}
+		</form>
 
-		<div class="card p-6">
+		<form method="POST" action="?/saveLookups" use:enhance={track('dvsa')} class="card p-6">
+			<input type="hidden" name="service" value="dvsa" />
 			<div class="flex items-center justify-between gap-4">
 				<h3 class="font-semibold">{DVSA_GUIDE.title}</h3>
 				<span class="text-xs font-medium {data.lookups.dvsa.configured ? 'text-emerald-700 dark:text-emerald-400' : 'text-zinc-500'}">{data.lookups.dvsa.configured ? '● Connected' : '○ Not set up'}</span>
@@ -157,10 +165,9 @@
 					<p class="mt-1.5 text-xs text-zinc-500">Copy it exactly from DVSA’s email.</p>
 				</div>
 			</div>
-		</div>
-
-		<button class="btn-primary" disabled={busy === 'lookups'}>{busy === 'lookups' ? 'Saving…' : 'Save lookup settings'}</button>
-	</form>
+			{@render saveRow('dvsa', 'Save DVSA details')}
+		</form>
+	</div>
 
 	{#if data.lookups.dvla.configured || data.lookups.dvsa.configured}
 		<div class="card mt-6 p-6">

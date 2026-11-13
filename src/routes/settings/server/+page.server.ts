@@ -141,19 +141,30 @@ export const actions: Actions = {
 	saveLookups: async ({ request, locals }) => {
 		requireAdmin(locals);
 		const fd = await request.formData();
+		// Each service has its own form; only touch the settings of the one submitted.
+		if (fd.get('service') === 'dvla') {
+			const update = secret(fd, 'dvla_api_key', 'dvla_api_key');
+			if (Object.keys(update).length === 0)
+				return fail(400, { lookups: bad('Paste your DVLA API key first.'), lookupsService: 'dvla' });
+			setSettings(update);
+			return {
+				lookups: ok(update.dvla_api_key === null ? 'DVLA key removed.' : 'DVLA key saved. Use “Test DVLA” below to check it.'),
+				lookupsService: 'dvla'
+			};
+		}
+
 		const tokenUrl = text(fd, 'dvsa_token_url', 300);
 		// Real token URLs are always https; localhost is allowed for testing against a mock.
 		if (tokenUrl && !/^(https:\/\/|http:\/\/(localhost|127\.0\.0\.1)[:/])/.test(tokenUrl))
-			return fail(400, { lookups: bad('The DVSA token URL should start with https://') });
+			return fail(400, { lookups: bad('The DVSA token URL should start with https://'), lookupsService: 'dvsa' });
 		setSettings({
-			...secret(fd, 'dvla_api_key', 'dvla_api_key'),
 			dvsa_client_id: text(fd, 'dvsa_client_id', 200),
 			...secret(fd, 'dvsa_client_secret', 'dvsa_client_secret'),
 			...secret(fd, 'dvsa_api_key', 'dvsa_api_key'),
 			dvsa_token_url: tokenUrl,
 			dvsa_scope: text(fd, 'dvsa_scope', 200) ?? DEFAULT_DVSA_SCOPE
 		});
-		return { lookups: ok('Lookup settings saved.') };
+		return { lookups: ok('DVSA details saved. Use “Test DVSA” below to check them.'), lookupsService: 'dvsa' };
 	},
 
 	testLookup: async ({ request, locals }) => {
