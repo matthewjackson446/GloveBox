@@ -46,7 +46,10 @@ export interface DvlaVehicle {
 	taxStatus?: string;
 	taxDueDate?: string;
 	motStatus?: string;
+	/** MOT expiry, normalised from whichever field name DVLA used (see dvlaLookup). */
 	motExpiry?: string;
+	/** What the live API actually returns; DVLA's published spec says `motExpiry`. */
+	motExpiryDate?: string;
 	markedForExport?: boolean;
 	co2Emissions?: number;
 	euroStatus?: string;
@@ -71,7 +74,11 @@ export async function dvlaLookup(reg: string, apiKey = getSetting('dvla_api_key'
 		throw connectError(e, 'DVLA');
 	}
 	if (res.status === 404) return null;
-	if (res.ok) return (await res.json()) as DvlaVehicle;
+	if (res.ok) {
+		const v = (await res.json()) as DvlaVehicle;
+		// The live service sends `motExpiryDate`; the published spec says `motExpiry`. Accept both.
+		return { ...v, motExpiry: v.motExpiry ?? v.motExpiryDate };
+	}
 	if (res.status === 400) throw new LookupError('DVLA says that isn’t a valid registration.', 400);
 	if (res.status === 401 || res.status === 403)
 		throw new LookupError('DVLA rejected the API key. Check it in Settings → Server.', res.status);
