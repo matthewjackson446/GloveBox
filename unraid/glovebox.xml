@@ -9,7 +9,7 @@
   <Privileged>false</Privileged>
   <Support>https://github.com/matthewjackson446/glovebox/issues</Support>
   <Project>https://github.com/matthewjackson446/glovebox</Project>
-  <Overview>Glovebox keeps track of your vehicles: MOT, road tax, insurance, servicing, breakdown cover, warranty and finance, all colour-coded by when they're due. Store policy numbers and claims lines, and pull up a one-tap emergency card at the roadside. Multi-user, with per-vehicle sharing. Data is stored in a single SQLite database in your appdata folder.</Overview>
+  <Overview>Glovebox keeps track of your vehicles: MOT, road tax, insurance, servicing (by date or mileage), breakdown cover, warranty and finance, colour-coded by when they are due. Get a daily reminder digest by email, ntfy, Gotify, Discord or webhook, or subscribe to a private calendar link. Keep service history, mileage and documents (V5C, certificates, receipts), renew policies with price history, and pull up a one-tap emergency card at the roadside. Optional DVLA and DVSA lookups (bring your own free keys) fill in vehicle details and keep tax and MOT dates current. Multi-user with per-vehicle sharing. Everything is stored in your appdata folder.</Overview>
   <Category>Productivity: Tools:</Category>
   <WebUI>http://[IP]:[PORT:8080]/</WebUI>
   <TemplateURL>https://raw.githubusercontent.com/matthewjackson446/glovebox/main/unraid/glovebox.xml</TemplateURL>

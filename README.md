@@ -1,6 +1,10 @@
-# Glovebox
+<p align="center"><img src="static/icon.png" width="96" alt="" /></p>
 
-A self-hosted tracker for your vehicles: MOT, road tax, insurance, servicing, breakdown cover, warranty and finance, all in one place and colour-coded by when they're due.
+<h1 align="center">Glovebox</h1>
+
+<p align="center">A self-hosted tracker for your vehicles: MOT, road tax, insurance, servicing, breakdown cover, warranty and finance, all in one place and colour-coded by when they're due.</p>
+
+![Dashboard](docs/screenshots/dashboard.png)
 
 - **Dashboard.** Every vehicle at a glance, with overdue items in red and anything due within 30 days in amber.
 - **Renewals and due dates.** Store providers, policy and membership numbers, phone numbers, premiums and excesses alongside the dates.
@@ -9,17 +13,31 @@ A self-hosted tracker for your vehicles: MOT, road tax, insurance, servicing, br
 - **Reminders.** A daily digest by email, [ntfy](https://ntfy.sh), Gotify, Discord or webhook (e.g. Home Assistant). Each user picks when (60/30/14/7/3/1 days before, and when overdue) and where. You never get the same reminder twice, and renewing an item starts its reminders afresh.
 - **Service history and documents.** Log services, repairs and tyres with cost, garage and mileage. Upload PDFs and photos (V5C, certificates, receipts) and attach them to a renewal or a job. Mileage readings give an annual average and an estimated date for mileage-based services.
 - **Renew with price history.** Roll an insurance, breakdown, warranty or tax period on a year and see how the price compares with previous years.
+- **DVLA and DVSA lookups (optional).** Bring your own free keys to fill in vehicle details from the registration and refresh tax and MOT dates, SORN status and MOT history every night.
 - **Emergency card.** A one-tap page with your breakdown line, insurer's claims line, policy numbers, locking wheel nut code and emergency contacts.
 - **Multi-user.** The admin creates accounts. Each vehicle can be shared with other users as *owner*, *can edit* or *can view*.
 - **One container, one SQLite file.** All data lives in `/config`.
 
+| Vehicle | Service history and documents |
+| --- | --- |
+| ![Vehicle page](docs/screenshots/vehicle.png) | ![Service history, mileage and documents](docs/screenshots/history.png) |
+| **Reminders** | **Emergency card (phone)** |
+| ![Reminder settings](docs/screenshots/reminders.png) | <img src="docs/screenshots/emergency-mobile.png" width="300" alt="Emergency card on a phone" /> |
+
+See [CHANGELOG.md](CHANGELOG.md) for what's in each release.
+
 ## Running on Unraid
 
-Until the app is listed in Community Apps, add it manually:
+Until Glovebox is listed in Community Apps, install the template by hand:
 
-1. **Docker → Add Container → Template**: paste the URL of [`unraid/glovebox.xml`](unraid/glovebox.xml) in raw form.
-2. Choose a port and an appdata path, then click **Apply**.
+1. Open Unraid's terminal (the **>_** icon) and save the template to your flash drive:
+   ```bash
+   wget -O /boot/config/plugins/dockerMan/templates-user/my-Glovebox.xml https://raw.githubusercontent.com/matthewjackson446/glovebox/main/unraid/glovebox.xml
+   ```
+2. Go to **Docker → Add Container**, pick **Glovebox** from the **Template** list, check the port and appdata path, then click **Apply**.
 3. Open the WebUI and create the admin account.
+
+**Updating:** when Unraid's Docker tab shows an update for Glovebox, click **Apply Update**. Your data in `/config` is kept and the database upgrades itself.
 
 ### Docker / Compose
 

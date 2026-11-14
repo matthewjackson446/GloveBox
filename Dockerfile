@@ -29,6 +29,10 @@ COPY docker/entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
 ARG VERSION=dev
+ARG REVISION=
+# Shown in Settings so people can tell which build they're running.
+ENV GLOVEBOX_VERSION=${VERSION} \
+    GLOVEBOX_REVISION=${REVISION}
 LABEL org.opencontainers.image.title="Glovebox" \
       org.opencontainers.image.description="Self-hosted vehicle tracker for MOT, tax, insurance, servicing and more" \
       org.opencontainers.image.licenses="MIT" \
