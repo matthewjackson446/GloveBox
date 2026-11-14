@@ -216,6 +216,56 @@
 		</div>
 	</section>
 
+	<section class="card p-6 lg:col-span-2" id="calendar">
+		<h2 class="font-semibold">Calendar</h2>
+		<p class="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+			Subscribe to every due date (MOT, tax, insurance, services…) in Google, Apple or Outlook Calendar. It updates by itself when dates change.
+		</p>
+		{#if form?.calendarMsg?.success}<p class="alert-success mt-4">{form.calendarMsg.success}</p>{/if}
+
+		{#if data.calendar.url}
+			<div class="mt-4 flex flex-wrap gap-2">
+				<input class="input min-w-0 flex-1 font-mono text-xs" readonly value={data.calendar.url} aria-label="Your private calendar link" onfocus={(e) => e.currentTarget.select()} />
+				<button type="button" class="btn-secondary" onclick={(e) => { navigator.clipboard?.writeText(data.calendar.url!); e.currentTarget.textContent = 'Copied'; }}>Copy</button>
+			</div>
+			<p class="mt-2 text-xs text-amber-700 dark:text-amber-400">Keep this link private: anyone with it can see your due dates. If it leaks, create a new one.</p>
+			{#if !data.calendar.publicUrlSet}
+				<p class="mt-1 text-xs text-zinc-500">This link uses the address you’re browsing on. Google and Outlook fetch calendars from the internet, so they need Glovebox’s public address; an admin can set it under Settings → Server → Public URL.</p>
+			{/if}
+
+			<details class="mt-4 rounded-xl bg-zinc-50 text-sm dark:bg-zinc-950/60">
+				<summary class="cursor-pointer px-4 py-3 font-medium select-none">How to add it to your calendar</summary>
+				<div class="grid gap-4 px-4 pb-4 sm:grid-cols-3">
+					<div>
+						<p class="font-medium">Google Calendar</p>
+						<p class="mt-1 text-zinc-600 dark:text-zinc-400">On a computer: <strong>Other calendars → + → From URL</strong>, paste the link, then <strong>Add calendar</strong>. It appears on your phone too. Google refreshes it every few hours.</p>
+					</div>
+					<div>
+						<p class="font-medium">Apple Calendar</p>
+						<p class="mt-1 text-zinc-600 dark:text-zinc-400">iPhone: <strong>Settings → Apps → Calendar → Calendar Accounts → Add Account → Other → Add Subscribed Calendar</strong>. Mac: <strong>File → New Calendar Subscription</strong>. Includes a reminder a week before.</p>
+					</div>
+					<div>
+						<p class="font-medium">Outlook</p>
+						<p class="mt-1 text-zinc-600 dark:text-zinc-400">Outlook.com: <strong>Add calendar → Subscribe from web</strong>, paste the link, then <strong>Import</strong>.</p>
+					</div>
+				</div>
+			</details>
+
+			<div class="mt-4 flex flex-wrap gap-2">
+				<form method="POST" action="?/calendarReset" use:enhance={({ cancel }) => { if (!confirm('Create a new link? The current one will stop working, so you’ll need to re-subscribe.')) cancel(); }}>
+					<button class="btn-ghost px-3 py-1.5">Create a new link</button>
+				</form>
+				<form method="POST" action="?/calendarDisable" use:enhance={({ cancel }) => { if (!confirm('Turn off the calendar link? Subscribed calendars will stop updating.')) cancel(); }}>
+					<button class="btn-ghost px-3 py-1.5 text-red-600 dark:text-red-400">Turn off</button>
+				</form>
+			</div>
+		{:else}
+			<form method="POST" action="?/calendarReset" use:enhance class="mt-4">
+				<button class="btn-secondary">Create my calendar link</button>
+			</form>
+		{/if}
+	</section>
+
 	<section class="card p-6 lg:col-span-2">
 		<h2 class="font-semibold">Emergency contacts</h2>
 		<p class="mt-1 text-sm text-zinc-500 dark:text-zinc-400">

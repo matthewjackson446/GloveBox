@@ -65,8 +65,23 @@
 				{data.emailConfigured ? '● Configured' : '○ Not set up'}
 			</span>
 		</div>
+		{#if data.smtpEnv}
+			<p class="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+				Set by the container’s <code>SMTP_*</code> variables (e.g. in the Unraid template), so it can’t be changed here. Edit the container to change it.
+			</p>
+			{#if !data.smtpEnv.complete}
+				<p class="alert-error mt-3"><code>SMTP_HOST</code> is set but <code>SMTP_FROM</code> isn’t, so email is off. Add <code>SMTP_FROM</code> to the container.</p>
+			{/if}
+			<dl class="mt-4 grid grid-cols-[auto_1fr] gap-x-6 gap-y-1.5 text-sm">
+				<dt class="text-zinc-500">Server</dt><dd class="font-mono">{data.smtpEnv.host}:{data.smtpEnv.port} · {data.smtpEnv.security.toUpperCase()}</dd>
+				<dt class="text-zinc-500">Username</dt><dd class="font-mono">{data.smtpEnv.user || '—'}</dd>
+				<dt class="text-zinc-500">Password</dt><dd>{data.smtpEnv.hasPassword ? 'Set' : 'Not set'}</dd>
+				<dt class="text-zinc-500">From</dt><dd class="font-mono">{data.smtpEnv.from || '—'}</dd>
+			</dl>
+		{:else}
 		<p class="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
 			Needed only for email reminders. With Gmail, use <code>smtp.gmail.com</code>, port 587, STARTTLS, and an app password.
+			On Unraid you can set these in the container template instead (<code>SMTP_HOST</code>, <code>SMTP_PASS</code>…).
 		</p>
 		<div class="mt-4 grid gap-4 sm:grid-cols-6">
 			<div class="sm:col-span-3">
@@ -87,11 +102,11 @@
 			</div>
 			<div class="sm:col-span-3">
 				<label class="label" for="smtp_user">Username</label>
-				<input class="input" id="smtp_user" name="smtp_user" autocomplete="off" value={v('smtp_user', data.smtp.user)} />
+				<input class="input" id="smtp_user" name="smtp_user" autocomplete="off" data-1p-ignore data-lpignore="true" data-bwignore spellcheck="false" value={v('smtp_user', data.smtp.user)} />
 			</div>
 			<div class="sm:col-span-3">
 				<label class="label" for="smtp_pass">Password</label>
-				<input class="input" id="smtp_pass" name="smtp_pass" type="password" autocomplete="new-password" placeholder={data.smtp.hasPassword ? '•••••••• (saved, leave blank to keep)' : ''} />
+				<input class="input" id="smtp_pass" name="smtp_pass" type="password" autocomplete="new-password" data-1p-ignore data-lpignore="true" data-bwignore placeholder={data.smtp.hasPassword ? '•••••••• (saved, leave blank to keep)' : ''} />
 				{#if data.smtp.hasPassword}
 					<label class="mt-1.5 flex items-center gap-2 text-xs text-zinc-500"><input type="checkbox" name="clear_pass" class="accent-emerald-600" /> Remove saved password</label>
 				{/if}
@@ -101,6 +116,7 @@
 				<input class="input" id="smtp_from" name="smtp_from" placeholder="Glovebox <glovebox@example.com>" value={v('smtp_from', data.smtp.from)} />
 			</div>
 		</div>
+		{/if}
 	</section>
 
 	<button class="btn-primary" disabled={busy === 'save'}>{busy === 'save' ? 'Saving…' : 'Save server settings'}</button>

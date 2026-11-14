@@ -9,7 +9,8 @@ import {
 	validateSession
 } from '$lib/server/auth';
 
-const PUBLIC_PATHS = ['/login', '/setup', '/api/health'];
+// /calendar/<token> is authenticated by its secret token, since calendar apps can't sign in.
+const PUBLIC_PATHS = ['/login', '/setup', '/api/health', '/calendar'];
 
 /** Runs once when the server starts: apply migrations, then start the reminder scheduler. */
 export const init: ServerInit = () => {

@@ -27,10 +27,13 @@ export function date(fd: FormData, key: string): string | null {
 	return Number.isNaN(Date.parse(t)) ? null : t;
 }
 
-/** Form values as plain strings, for re-populating a form after a validation error. */
+/** Fields never echoed back to the browser (passwords, SMTP pass, tokens, API keys, secrets). Not `key_code`. */
+const SECRET_FIELD = /pass|secret|token|api_key/i;
+
+/** Form values as plain strings, for re-populating a form after a validation error. Secrets are left out. */
 export function values(fd: FormData): Record<string, string> {
 	const out: Record<string, string> = {};
-	for (const [k, v] of fd) if (typeof v === 'string' && !k.toLowerCase().includes('password')) out[k] = v;
+	for (const [k, v] of fd) if (typeof v === 'string' && !SECRET_FIELD.test(k)) out[k] = v;
 	return out;
 }
 

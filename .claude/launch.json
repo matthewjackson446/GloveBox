@@ -17,6 +17,19 @@
 				"GLOVEBOX_DVSA_URL": "http://localhost:9921/dvsa",
 				"GLOVEBOX_DISABLE_SCHEDULER": "true"
 			}
+		},
+		{
+			"name": "glovebox-dev-smtpenv",
+			"runtimeExecutable": "npm",
+			"runtimeArgs": ["run", "dev", "--", "--port", "5175", "--strictPort"],
+			"port": 5175,
+			"env": {
+				"SMTP_HOST": "localhost",
+				"SMTP_PORT": "2525",
+				"SMTP_SECURITY": "none",
+				"SMTP_FROM": "Glovebox <env-from@glovebox.test>",
+				"GLOVEBOX_DISABLE_SCHEDULER": "true"
+			}
 		}
 	]
 }
