@@ -100,7 +100,7 @@
 					{#if v.missing.length}
 						<li class="flex items-center gap-2.5 text-sm text-zinc-400 dark:text-zinc-500">
 							<StatusDot status="none" />
-							No {v.missing.map((t) => ITEM_TYPES[t].label).join(', ')} recorded
+							No {v.missing.map((t) => (t === 'mot' ? 'MOT' : ITEM_TYPES[t].label.toLowerCase())).join(', ')} recorded
 						</li>
 					{/if}
 				</ul>

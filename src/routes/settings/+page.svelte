@@ -307,3 +307,7 @@
 		</form>
 	</section>
 </div>
+
+<p class="mt-10 text-center text-xs text-zinc-400 dark:text-zinc-500">
+	Glovebox {data.version} · <a class="hover:underline" href="https://github.com/matthewjackson446/GloveBox" target="_blank" rel="noopener noreferrer">GitHub</a> · <a class="hover:underline" href="https://github.com/matthewjackson446/GloveBox/issues" target="_blank" rel="noopener noreferrer">Report a problem</a>
+</p>

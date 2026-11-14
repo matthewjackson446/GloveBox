@@ -30,6 +30,16 @@
 				"SMTP_FROM": "Glovebox <env-from@glovebox.test>",
 				"GLOVEBOX_DISABLE_SCHEDULER": "true"
 			}
+		},
+		{
+			"name": "glovebox-demo",
+			"runtimeExecutable": "npm",
+			"runtimeArgs": ["run", "dev", "--", "--port", "5176", "--strictPort"],
+			"port": 5176,
+			"env": {
+				"DATA_DIR": "data/demo",
+				"GLOVEBOX_DISABLE_SCHEDULER": "true"
+			}
 		}
 	]
 }

@@ -1,0 +1,15 @@
+{
+	"name": "Glovebox",
+	"short_name": "Glovebox",
+	"description": "Your vehicles' MOT, tax, insurance, servicing and paperwork in one place.",
+	"start_url": "/",
+	"scope": "/",
+	"display": "standalone",
+	"background_color": "#fafafa",
+	"theme_color": "#059669",
+	"icons": [
+		{ "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" },
+		{ "src": "/icon.png", "sizes": "512x512", "type": "image/png" },
+		{ "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml" }
+	]
+}

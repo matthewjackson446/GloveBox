@@ -22,6 +22,7 @@ import {
 import { DAY_CHOICES, buildMessage, parseDays, pendingReminders } from '$lib/server/notify/reminders';
 import { getSmtp, publicUrl } from '$lib/server/settings';
 import { calendarToken, disableCalendar, resetCalendarToken } from '$lib/server/calendar';
+import { appVersion } from '$lib/server/version';
 import type { Contact } from '$lib/types';
 import type { Actions, PageServerLoad } from './$types';
 
@@ -51,6 +52,7 @@ export const load: PageServerLoad = ({ locals, url }) => {
 		},
 		channels: listChannels(userId).map(summarise),
 		emailAvailable: getSmtp() !== null,
+		version: appVersion(),
 		calendar: {
 			url: token ? `${base}/calendar/${token}.ics` : null,
 			// Calendar apps fetch from the internet, so a LAN-only address only works at home.
