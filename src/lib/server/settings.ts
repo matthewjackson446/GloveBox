@@ -35,8 +35,48 @@ export interface SmtpConfig {
 	from: string;
 }
 
-/** SMTP settings, or null if email isn't configured. */
+const SECURITIES: SmtpSecurity[] = ['starttls', 'tls', 'none'];
+
+/** SMTP set through container variables (e.g. the Unraid template). When present, it wins. */
+export function smtpFromEnv(): boolean {
+	return !!process.env.SMTP_HOST?.trim();
+}
+
+function envSmtp(): SmtpConfig | null {
+	const e = process.env;
+	const host = e.SMTP_HOST?.trim();
+	const from = e.SMTP_FROM?.trim();
+	if (!host || !from) return null;
+	const security = SECURITIES.includes(e.SMTP_SECURITY?.trim().toLowerCase() as SmtpSecurity)
+		? (e.SMTP_SECURITY!.trim().toLowerCase() as SmtpSecurity)
+		: 'starttls';
+	return {
+		host,
+		port: Number(e.SMTP_PORT) || (security === 'tls' ? 465 : 587),
+		security,
+		user: e.SMTP_USER?.trim() || null,
+		pass: e.SMTP_PASS || null,
+		from
+	};
+}
+
+/** Non-secret view of the container-variable SMTP settings, for showing read-only in the UI. */
+export function envSmtpSummary() {
+	const c = envSmtp();
+	return {
+		host: process.env.SMTP_HOST?.trim() ?? '',
+		port: c ? String(c.port) : (process.env.SMTP_PORT ?? ''),
+		security: c?.security ?? 'starttls',
+		user: process.env.SMTP_USER?.trim() ?? '',
+		hasPassword: !!process.env.SMTP_PASS,
+		from: process.env.SMTP_FROM?.trim() ?? '',
+		complete: c !== null
+	};
+}
+
+/** SMTP settings, or null if email isn't configured. Container variables take priority. */
 export function getSmtp(): SmtpConfig | null {
+	if (smtpFromEnv()) return envSmtp();
 	const host = getSetting('smtp_host');
 	const from = getSetting('smtp_from');
 	if (!host || !from) return null;

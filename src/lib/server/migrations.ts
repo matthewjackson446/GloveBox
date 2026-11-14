@@ -197,5 +197,10 @@ export const migrations: string[] = [
 		renewed_at TEXT NOT NULL DEFAULT (datetime('now'))
 	);
 	CREATE INDEX item_history_item ON item_history(item_id);
+	`,
+
+	/* 5: private calendar feed link per user */ `
+	ALTER TABLE users ADD COLUMN calendar_token TEXT;
+	CREATE UNIQUE INDEX users_calendar_token ON users(calendar_token);
 	`
 ];

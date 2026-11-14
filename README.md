@@ -5,6 +5,7 @@ A self-hosted tracker for your vehicles: MOT, road tax, insurance, servicing, br
 - **Dashboard.** Every vehicle at a glance, with overdue items in red and anything due within 30 days in amber.
 - **Renewals and due dates.** Store providers, policy and membership numbers, phone numbers, premiums and excesses alongside the dates.
 - **Service by date or mileage.** Update the mileage and service reminders work out the rest.
+- **Calendar feed.** A private link per user for Google, Apple or Outlook Calendar.
 - **Reminders.** A daily digest by email, [ntfy](https://ntfy.sh), Gotify, Discord or webhook (e.g. Home Assistant). Each user picks when (60/30/14/7/3/1 days before, and when overdue) and where. You never get the same reminder twice, and renewing an item starts its reminders afresh.
 - **Service history and documents.** Log services, repairs and tyres with cost, garage and mileage. Upload PDFs and photos (V5C, certificates, receipts) and attach them to a renewal or a job. Mileage readings give an annual average and an estimated date for mileage-based services.
 - **Renew with price history.** Roll an insurance, breakdown, warranty or tax period on a year and see how the price compares with previous years.
@@ -43,10 +44,13 @@ services:
 | `UMASK` | `022` | |
 | `TZ` | `Europe/London` | Decides what "today" is for due dates, and when the daily reminder run happens |
 | `GLOVEBOX_DISABLE_SCHEDULER` | unset | Set to `true` to stop automatic daily reminders |
+| `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURITY`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM` | unset | Optional email settings. If `SMTP_HOST` is set, these take priority over **Settings → Server** and are shown read-only there. `SMTP_SECURITY` is `starttls` (default), `tls` or `none`. |
 
 **Reverse proxy:** Glovebox works on plain `http://<lan-ip>:8080` and behind a reverse proxy over HTTPS. Pass `X-Forwarded-Proto` and `X-Forwarded-Host` through; Nginx Proxy Manager and SWAG do this by default. Cookies are only marked `Secure` when the request came in over HTTPS.
 
 **Reminders:** in **Settings → Server**, an admin sets the daily send time, an optional public URL (for links in notifications) and SMTP details if anyone wants email. Each user then adds their own channels under **Settings → Reminders**.
+
+**Calendar:** each user can create a private subscription link under **Settings → Calendar** and add it to Google, Apple or Outlook Calendar. All due dates appear there and update by themselves. Set the **Public URL** first so the link works from outside your network. Anyone with the link can read the dates, so it can be reset or turned off at any time.
 
 ### Vehicle lookups (optional): DVLA and DVSA
 
@@ -97,7 +101,7 @@ Pushing to `main` publishes `ghcr.io/<owner>/glovebox:edge`. Pushing a tag such 
 - [x] Reminders by email (SMTP), ntfy, Gotify and Discord/webhooks
 - [x] Look up by registration via DVLA (tax and MOT dates) and DVSA (MOT history), with nightly refresh
 - [x] Service history, mileage log, document uploads (V5C, certificates, receipts), renewals with price history
-- [ ] Calendar (`.ics`) feed
+- [x] Calendar (`.ics`) feed
 - [ ] Community Apps listing
 
 ## Licence

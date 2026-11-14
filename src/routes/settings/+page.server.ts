@@ -20,7 +20,8 @@ import {
 	summarise
 } from '$lib/server/notify/channels';
 import { DAY_CHOICES, buildMessage, parseDays, pendingReminders } from '$lib/server/notify/reminders';
-import { getSmtp } from '$lib/server/settings';
+import { getSmtp, publicUrl } from '$lib/server/settings';
+import { calendarToken, disableCalendar, resetCalendarToken } from '$lib/server/calendar';
 import type { Contact } from '$lib/types';
 import type { Actions, PageServerLoad } from './$types';
 
@@ -30,7 +31,9 @@ interface ReminderPrefs {
 	remind_overdue: number;
 }
 
-export const load: PageServerLoad = ({ locals }) => {
+export const load: PageServerLoad = ({ locals, url }) => {
+	const token = calendarToken(locals.user!.id);
+	const base = (publicUrl() ?? url.origin).replace(/\/+$/, '');
 	const userId = locals.user!.id;
 	const contacts = db()
 		.prepare('SELECT * FROM contacts WHERE user_id = ? ORDER BY id')
@@ -47,11 +50,26 @@ export const load: PageServerLoad = ({ locals }) => {
 			choices: [...DAY_CHOICES]
 		},
 		channels: listChannels(userId).map(summarise),
-		emailAvailable: getSmtp() !== null
+		emailAvailable: getSmtp() !== null,
+		calendar: {
+			url: token ? `${base}/calendar/${token}.ics` : null,
+			// Calendar apps fetch from the internet, so a LAN-only address only works at home.
+			publicUrlSet: publicUrl() !== null
+		}
 	};
 };
 
 export const actions: Actions = {
+	calendarReset: async ({ locals }) => {
+		resetCalendarToken(locals.user!.id);
+		return { calendarMsg: ok('New calendar link created. Any old link has stopped working.') };
+	},
+
+	calendarDisable: async ({ locals }) => {
+		disableCalendar(locals.user!.id);
+		return { calendarMsg: ok('Calendar link turned off.') };
+	},
+
 	reminderPrefs: async ({ request, locals }) => {
 		const fd = await request.formData();
 		const days = parseDays(fd.getAll('days').join(','));

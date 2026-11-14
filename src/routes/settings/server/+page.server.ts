@@ -15,11 +15,13 @@ import { runReminders } from '$lib/server/notify/reminders';
 import { LAST_RUN_KEY } from '$lib/server/notify/scheduler';
 import {
 	DEFAULT_REMINDER_HOUR,
+	envSmtpSummary,
 	getSetting,
 	getSmtp,
 	publicUrl,
 	reminderHour,
 	setSettings,
+	smtpFromEnv,
 	type SmtpSecurity
 } from '$lib/server/settings';
 import type { Actions, PageServerLoad } from './$types';
@@ -41,6 +43,8 @@ export const load: PageServerLoad = ({ locals }) => {
 			from: getSetting('smtp_from') ?? ''
 		},
 		emailConfigured: getSmtp() !== null,
+		// When set via container variables, SMTP is shown read-only here.
+		smtpEnv: smtpFromEnv() ? envSmtpSummary() : null,
 		publicUrl: publicUrl() ?? '',
 		reminderHour: reminderHour(),
 		lastRun: getSetting(LAST_RUN_KEY),
@@ -83,14 +87,18 @@ export const actions: Actions = {
 		const fd = await request.formData();
 		const err = (m: string) => fail(400, { save: bad(m, values(fd)) });
 
+		const envManaged = smtpFromEnv();
 		const host = text(fd, 'smtp_host', 200);
 		const from = text(fd, 'smtp_from', 200);
+		const user = text(fd, 'smtp_user', 200);
 		const port = int(fd, 'smtp_port');
 		const security = SECURITY.includes(fd.get('smtp_security') as SmtpSecurity)
 			? (fd.get('smtp_security') as SmtpSecurity)
 			: 'starttls';
-		if (host && !from) return err('Enter a “From” address for emails.');
-		if (port !== null && (port < 1 || port > 65535)) return err('SMTP port must be 1–65535.');
+		if (!envManaged) {
+			if (host && !from) return err('Enter a “From” address for emails.');
+			if (port !== null && (port < 1 || port > 65535)) return err('SMTP port must be 1–65535.');
+		}
 
 		let url = text(fd, 'public_url', 300);
 		if (url) {
@@ -111,13 +119,23 @@ export const actions: Actions = {
 		const passUpdate: Record<string, string | null> =
 			fd.get('clear_pass') === 'on' ? { smtp_pass: null } : pass ? { smtp_pass: pass } : {};
 
+		// Catch the password box being filled with the username (e.g. by a browser's autofill).
+		const effectivePass = fd.get('clear_pass') === 'on' ? null : pass || getSetting('smtp_pass');
+		if (!envManaged && user && effectivePass && effectivePass.trim() === user.trim())
+			return err('The SMTP password is the same as the username. Your browser may have filled it in. Paste the real password (for SMTP2GO, the SMTP user’s password).');
+
 		setSettings({
-			smtp_host: host,
-			smtp_port: port === null ? null : String(port),
-			smtp_security: security,
-			smtp_user: text(fd, 'smtp_user', 200),
-			smtp_from: from,
-			...passUpdate,
+			// Container variables own SMTP when set; only save the other settings then.
+			...(envManaged
+				? {}
+				: {
+						smtp_host: host,
+						smtp_port: port === null ? null : String(port),
+						smtp_security: security,
+						smtp_user: user,
+						smtp_from: from,
+						...passUpdate
+					}),
 			public_url: url,
 			reminder_hour: String(hour)
 		});
