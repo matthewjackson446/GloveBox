@@ -1,7 +1,8 @@
 # Changelog
 
-## Unreleased
+## v0.2.0
 
+- **Now in Unraid Community Apps:** search “Glovebox” in the Apps tab. Support thread: https://forums.unraid.net/topic/201296-support-glovebox-self-hosted-vehicle-tracker-mot-tax-insurance-servicing-reminders/
 - **Running costs:** a new Costs page shows each year’s spend by vehicle and category, built from service history, renewal costs (including past renewals) and finance payments.
 - **Archive vehicles** you no longer have, from the vehicle’s Edit page. They leave the dashboard, reminders, calendar and nightly DVLA/DVSA checks but keep their history and documents, and can be restored.
 
