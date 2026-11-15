@@ -8,6 +8,7 @@ import {
 } from '$lib/server/auth';
 import { db } from '$lib/server/db';
 import { bad, ok, text, values } from '$lib/server/form';
+import { disable as disableTotp } from '$lib/server/totp';
 import type { UserRole } from '$lib/types';
 import type { Actions, PageServerLoad } from './$types';
 
@@ -18,6 +19,7 @@ interface UserRow {
 	role: UserRole;
 	created_at: string;
 	vehicles: number;
+	totp_enabled: number;
 }
 
 function requireAdmin(locals: App.Locals) {
@@ -33,7 +35,7 @@ export const load: PageServerLoad = ({ locals }) => {
 	requireAdmin(locals);
 	const users = db()
 		.prepare(
-			`SELECT u.id, u.name, u.email, u.role, u.created_at,
+			`SELECT u.id, u.name, u.email, u.role, u.created_at, u.totp_enabled,
 			   (SELECT COUNT(*) FROM vehicle_users vu WHERE vu.user_id = u.id) AS vehicles
 			 FROM users u ORDER BY u.name`
 		)
@@ -83,6 +85,15 @@ export const actions: Actions = {
 		db().prepare('UPDATE users SET password_hash = ? WHERE id = ?').run(await hashPassword(password), id);
 		deleteUserSessions(id);
 		return { rowSuccess: 'Password reset. They’ve been signed out everywhere.' };
+	},
+
+	/** For someone who has lost their phone and their recovery codes. */
+	reset2fa: async ({ request, locals }) => {
+		requireAdmin(locals);
+		const id = Number((await request.formData()).get('id'));
+		disableTotp(id);
+		deleteUserSessions(id);
+		return { rowSuccess: 'Two-factor sign-in turned off for that user. They can sign in with just their password and set it up again.' };
 	},
 
 	delete: async ({ request, locals }) => {

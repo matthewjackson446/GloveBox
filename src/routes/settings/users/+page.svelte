@@ -23,6 +23,7 @@
 				<p class="font-medium">
 					{u.name}
 					{#if u.id === data.user?.id}<span class="text-sm font-normal text-zinc-500">(you)</span>{/if}
+					{#if u.totp_enabled}<span class="ml-1 rounded bg-emerald-100 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-800 uppercase dark:bg-emerald-950 dark:text-emerald-300">2FA</span>{/if}
 				</p>
 				<p class="truncate text-sm text-zinc-500 dark:text-zinc-400">{u.email} · {u.vehicles} vehicle{u.vehicles === 1 ? '' : 's'}</p>
 			</div>
@@ -41,6 +42,12 @@
 				</select>
 			</form>
 			<button class="btn-ghost px-3 py-1.5" onclick={() => (resetFor = resetFor === u.id ? null : u.id)}>Reset password</button>
+			{#if u.totp_enabled && u.id !== data.user?.id}
+				<form method="POST" action="?/reset2fa" use:enhance={({ cancel }) => { if (!confirm(`Turn off two-factor sign-in for ${u.name}? Only do this if you're sure it's really them asking.`)) cancel(); }}>
+					<input type="hidden" name="id" value={u.id} />
+					<button class="btn-ghost px-3 py-1.5">Reset 2FA</button>
+				</form>
+			{/if}
 			{#if u.id !== data.user?.id}
 				<form
 					method="POST"

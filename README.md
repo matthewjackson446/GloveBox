@@ -17,6 +17,9 @@
 - **Renew with price history.** Roll an insurance, breakdown, warranty or tax period on a year and see how the price compares with previous years.
 - **DVLA and DVSA lookups (optional).** Bring your own free keys to fill in vehicle details from the registration and refresh tax and MOT dates, SORN status and MOT history every night.
 - **Emergency card.** A one-tap page with your breakdown line, insurer's claims line, policy numbers, locking wheel nut code and emergency contacts.
+- **Two-factor sign-in.** Optional 6-digit codes from any authenticator app, with recovery codes. Recommended if your instance is on the internet.
+- **Backup download.** Admins can download a ZIP of the database and all documents from **Settings → Server**.
+- **Light and dark mode.** Follows your device, or pick one from the header.
 - **Multi-user.** The admin creates accounts. Each vehicle can be shared with other users as *owner*, *can edit* or *can view*.
 - **One container, one SQLite file.** All data lives in `/config`.
 
@@ -92,7 +95,7 @@ With your own free keys, typing a registration fills in the vehicle's details, a
 
 Glovebox never overwrites details you've typed. It only fills blanks, keeps tax/MOT due dates current (turn this off per vehicle with *Keep tax and MOT dates up to date automatically*), and only ever moves mileage forwards.
 
-**Backups:** everything is in `/config`: the database (`glovebox.db`) and uploaded files (`documents/`). Stop the container and copy the folder, or include it in your appdata backup.
+**Backups:** an admin can download a ZIP from **Settings → Server → Backup** (restore steps are inside). Everything is also in `/config`: the database (`glovebox.db`) and uploaded files (`documents/`). Stop the container and copy the folder, or include it in your appdata backup.
 
 ## Development
 

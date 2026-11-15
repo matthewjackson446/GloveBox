@@ -23,6 +23,18 @@ import { DAY_CHOICES, buildMessage, parseDays, pendingReminders } from '$lib/ser
 import { getSmtp, publicUrl } from '$lib/server/settings';
 import { calendarToken, disableCalendar, resetCalendarToken } from '$lib/server/calendar';
 import { appVersion } from '$lib/server/version';
+import {
+	beginSetup,
+	checkSecondFactor,
+	disable as disableTotp,
+	enable as enableTotp,
+	otpauthUri,
+	qrSvg,
+	recoveryLeft,
+	regenerateRecovery,
+	totpState,
+	verifyCode
+} from '$lib/server/totp';
 import type { Contact } from '$lib/types';
 import type { Actions, PageServerLoad } from './$types';
 
@@ -32,7 +44,7 @@ interface ReminderPrefs {
 	remind_overdue: number;
 }
 
-export const load: PageServerLoad = ({ locals, url }) => {
+export const load: PageServerLoad = async ({ locals, url }) => {
 	const token = calendarToken(locals.user!.id);
 	const base = (publicUrl() ?? url.origin).replace(/\/+$/, '');
 	const userId = locals.user!.id;
@@ -42,7 +54,20 @@ export const load: PageServerLoad = ({ locals, url }) => {
 	const prefs = db()
 		.prepare('SELECT reminders_enabled, reminder_days, remind_overdue FROM users WHERE id = ?')
 		.get(userId) as ReminderPrefs;
+	// Two-factor: off, being set up (secret saved, not yet confirmed), or on.
+	const t = totpState(userId);
+	const settingUp = !!t.totp_secret && !t.totp_enabled;
+	const security = {
+		enabled: t.totp_enabled === 1,
+		recoveryLeft: recoveryLeft(t),
+		setup: settingUp
+			? { secret: t.totp_secret!.replace(/(.{4})/g, '$1 ').trim(), qr: await qrSvg(otpauthUri(t.totp_secret!, locals.user!.email)) }
+			: null,
+		justUsedRecovery: url.searchParams.get('recovery') === 'used'
+	};
+
 	return {
+		security,
 		contacts,
 		reminders: {
 			enabled: prefs.reminders_enabled === 1,
@@ -62,6 +87,45 @@ export const load: PageServerLoad = ({ locals, url }) => {
 };
 
 export const actions: Actions = {
+	totpBegin: async ({ locals }) => {
+		if (totpState(locals.user!.id).totp_enabled) return fail(400, { security: bad('Two-factor sign-in is already on.') });
+		beginSetup(locals.user!.id);
+	},
+
+	totpCancel: async ({ locals }) => {
+		if (!totpState(locals.user!.id).totp_enabled) disableTotp(locals.user!.id);
+	},
+
+	totpConfirm: async ({ locals, request }) => {
+		const t = totpState(locals.user!.id);
+		if (!t.totp_secret || t.totp_enabled) return fail(400, { security: bad('Start the setup again.') });
+		const step = verifyCode(t.totp_secret, text(await request.formData(), 'code', 10) ?? '', null);
+		if (step === null)
+			return fail(400, { security: bad('That code didn’t match. Check your phone’s clock is right and enter the current code.') });
+		const codes = enableTotp(locals.user!.id, step);
+		// Other devices must now sign in with a code too.
+		deleteUserSessions(locals.user!.id, locals.sessionToken);
+		return { recoveryCodes: codes, security: ok('Two-factor sign-in is on. Other devices have been signed out.') };
+	},
+
+	totpRegenerate: async ({ locals, request }) => {
+		const code = text(await request.formData(), 'code', 20) ?? '';
+		if (!checkSecondFactor(locals.user!.id, code).ok)
+			return fail(400, { security: bad('Enter a current code from your authenticator app (or a recovery code).') });
+		return { recoveryCodes: regenerateRecovery(locals.user!.id), security: ok('New recovery codes created. The old ones no longer work.') };
+	},
+
+	totpDisable: async ({ locals, request }) => {
+		const fd = await request.formData();
+		const row = db().prepare('SELECT password_hash FROM users WHERE id = ?').get(locals.user!.id) as { password_hash: string };
+		if (!(await verifyPassword((fd.get('password') as string | null) ?? '', row.password_hash)))
+			return fail(400, { security: bad('Your password is incorrect.') });
+		if (!checkSecondFactor(locals.user!.id, text(fd, 'code', 20) ?? '').ok)
+			return fail(400, { security: bad('Enter a current code from your authenticator app (or a recovery code).') });
+		disableTotp(locals.user!.id);
+		return { security: ok('Two-factor sign-in is off.') };
+	},
+
 	calendarReset: async ({ locals }) => {
 		resetCalendarToken(locals.user!.id);
 		return { calendarMsg: ok('New calendar link created. Any old link has stopped working.') };

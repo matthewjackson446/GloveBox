@@ -207,5 +207,14 @@ export const migrations: string[] = [
 	/* 6: when and why a vehicle was archived (sold, scrapped…) */ `
 	ALTER TABLE vehicles ADD COLUMN archived_at TEXT;
 	ALTER TABLE vehicles ADD COLUMN archive_note TEXT;
+	`,
+
+	/* 7: two-factor sign-in (TOTP) */ `
+	ALTER TABLE users ADD COLUMN totp_secret TEXT;
+	ALTER TABLE users ADD COLUMN totp_enabled INTEGER NOT NULL DEFAULT 0;
+	-- JSON array of SHA-256 hashes of unused recovery codes.
+	ALTER TABLE users ADD COLUMN totp_recovery TEXT;
+	-- Last time-step accepted, so a code can't be reused.
+	ALTER TABLE users ADD COLUMN totp_last_step INTEGER;
 	`
 ];

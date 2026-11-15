@@ -207,6 +207,15 @@
 	{/if}
 </section>
 
+<section class="card mt-8 p-6" id="backup">
+	<h2 class="font-semibold">Backup</h2>
+	<p class="mt-1 max-w-3xl text-sm text-zinc-500 dark:text-zinc-400">
+		Download everything Glovebox stores as a ZIP: the database and every uploaded document, with restore instructions inside.
+		It includes password hashes, API keys and SMTP settings, so keep it somewhere safe. Your Unraid appdata backup also covers this folder.
+	</p>
+	<a href="/settings/server/backup" class="btn-secondary mt-4" download>Download backup</a>
+</section>
+
 <section class="card mt-8 p-6">
 	<h2 class="font-semibold">Check it works</h2>
 	<div class="mt-4 flex flex-wrap gap-3">
