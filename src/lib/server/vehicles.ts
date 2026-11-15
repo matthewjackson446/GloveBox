@@ -134,6 +134,44 @@ export function updateVehicle(id: number, data: VehicleInput) {
 		.run({ ...data, id });
 }
 
+/**
+ * Archive a vehicle you no longer have. It drops off the dashboard, reminders, calendar and
+ * nightly DVLA/DVSA refresh, but keeps its history and documents, and can be restored.
+ */
+export function archiveVehicle(id: number, on: string, note: string | null) {
+	db()
+		.prepare(`UPDATE vehicles SET archived = 1, archived_at = ?, archive_note = ?, updated_at = datetime('now') WHERE id = ?`)
+		.run(on, note, id);
+}
+
+export function restoreVehicle(id: number) {
+	db()
+		.prepare(`UPDATE vehicles SET archived = 0, archived_at = NULL, archive_note = NULL, updated_at = datetime('now') WHERE id = ?`)
+		.run(id);
+}
+
+export function listArchivedVehicles(userId: number): VehicleWithRole[] {
+	return db()
+		.prepare(
+			`SELECT v.*, vu.role FROM vehicles v
+			 JOIN vehicle_users vu ON vu.vehicle_id = v.id
+			 WHERE vu.user_id = ? AND v.archived = 1
+			 ORDER BY v.archived_at DESC, v.id DESC`
+		)
+		.all(userId) as VehicleWithRole[];
+}
+
+export function archivedCount(userId: number): number {
+	return (
+		db()
+			.prepare(
+				`SELECT COUNT(*) AS n FROM vehicles v JOIN vehicle_users vu ON vu.vehicle_id = v.id
+				 WHERE vu.user_id = ? AND v.archived = 1`
+			)
+			.get(userId) as { n: number }
+	).n;
+}
+
 export function deleteVehicle(id: number) {
 	db().prepare('DELETE FROM vehicles WHERE id = ?').run(id);
 }

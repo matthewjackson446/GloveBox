@@ -3,7 +3,9 @@ import { db } from '$lib/server/db';
 import { deleteVehicleFiles } from '$lib/server/documents';
 import { values } from '$lib/server/form';
 import { lookupsConfigured } from '$lib/server/lookup/sync';
-import { deleteVehicle, readVehicleForm, requireVehicle, updateVehicle } from '$lib/server/vehicles';
+import { archiveVehicle, deleteVehicle, readVehicleForm, requireVehicle, updateVehicle } from '$lib/server/vehicles';
+import { date, text } from '$lib/server/form';
+import { todayISO } from '$lib/status';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = ({ params, locals }) => ({
@@ -20,6 +22,15 @@ export const actions: Actions = {
 		updateVehicle(vehicle.id, data);
 		if (fd.get('auto_sync_shown'))
 			db().prepare('UPDATE vehicles SET auto_sync = ? WHERE id = ?').run(fd.get('auto_sync') === 'on' ? 1 : 0, vehicle.id);
+		redirect(303, `/vehicles/${vehicle.id}`);
+	},
+
+	archive: async ({ params, locals, request }) => {
+		const vehicle = requireVehicle(params.id, locals.user, 'owner');
+		const fd = await request.formData();
+		const on = date(fd, 'archived_at') ?? todayISO();
+		if (on > todayISO()) return fail(400, { archiveError: 'The date can’t be in the future.' });
+		archiveVehicle(vehicle.id, on, text(fd, 'archive_note', 200));
 		redirect(303, `/vehicles/${vehicle.id}`);
 	},
 

@@ -30,6 +30,10 @@ export interface Vehicle {
 	locking_wheel_nut_code: string | null;
 	notes: string | null;
 	archived: number;
+	/** YYYY-MM-DD the vehicle was archived (e.g. sold). */
+	archived_at: string | null;
+	/** Why, e.g. "Sold to a private buyer". */
+	archive_note: string | null;
 	auto_sync: number;
 	tax_status: string | null;
 	mot_status: string | null;

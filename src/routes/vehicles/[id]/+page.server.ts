@@ -8,6 +8,7 @@ import {
 	ownerCount,
 	removeMember,
 	requireVehicle,
+	restoreVehicle,
 	setMember
 } from '$lib/server/vehicles';
 import { lookupsConfigured, syncVehicle } from '$lib/server/lookup/sync';
@@ -49,6 +50,11 @@ const parseRole = (v: FormDataEntryValue | null): VehicleRole =>
 	ROLES.includes(v as VehicleRole) ? (v as VehicleRole) : 'viewer';
 
 export const actions: Actions = {
+	restore: async ({ params, locals }) => {
+		const vehicle = requireVehicle(params.id, locals.user, 'owner');
+		restoreVehicle(vehicle.id);
+	},
+
 	uploadDocument: async ({ params, locals, request }) => {
 		const vehicle = requireVehicle(params.id, locals.user, 'editor');
 		const fd = await request.formData();

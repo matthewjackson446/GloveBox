@@ -12,6 +12,8 @@
 - **Calendar feed.** A private link per user for Google, Apple or Outlook Calendar.
 - **Reminders.** A daily digest by email, [ntfy](https://ntfy.sh), Gotify, Discord or webhook (e.g. Home Assistant). Each user picks when (60/30/14/7/3/1 days before, and when overdue) and where. You never get the same reminder twice, and renewing an item starts its reminders afresh.
 - **Service history and documents.** Log services, repairs and tyres with cost, garage and mileage. Upload PDFs and photos (V5C, certificates, receipts) and attach them to a renewal or a job. Mileage readings give an annual average and an estimated date for mileage-based services.
+- **Running costs.** A Costs page totals each year by vehicle and category (insurance, tax, servicing and repairs, breakdown, warranty, finance), built from what you already record.
+- **Archive sold vehicles.** They leave the dashboard, reminders and calendar but keep their history, costs and documents, and can be restored.
 - **Renew with price history.** Roll an insurance, breakdown, warranty or tax period on a year and see how the price compares with previous years.
 - **DVLA and DVSA lookups (optional).** Bring your own free keys to fill in vehicle details from the registration and refresh tax and MOT dates, SORN status and MOT history every night.
 - **Emergency card.** A one-tap page with your breakdown line, insurer's claims line, policy numbers, locking wheel nut code and emergency contacts.
