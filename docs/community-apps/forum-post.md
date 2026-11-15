@@ -1,6 +1,8 @@
-# Unraid forum support thread: draft
+# Unraid forum support thread
 
-**Where:** forums.unraid.net → **Community Apps → Docker Containers** (the sub-forum where app support threads live). Start a new topic.
+**Posted:** https://forums.unraid.net/topic/201296-support-glovebox-self-hosted-vehicle-tracker-mot-tax-insurance-servicing-reminders/
+
+**Where:** the right home is **Application Support → Docker Containers**, but only **Community Developers** can start topics there ([why](https://forums.unraid.net/topic/40696-why-cant-i-post-new-topics-in-here/)). So it was posted in **Unraid OS Support → General Support**, with a request to a moderator to move it. New accounts' first posts are also held for moderator approval. The text below is what was posted. To edit it, use **Edit** on the first post.
 
 **Title:**
 
@@ -8,7 +10,7 @@
 [Support] Glovebox: self-hosted vehicle tracker (MOT, tax, insurance, servicing, reminders)
 ```
 
-**Body:** paste everything between the lines below. The forum editor doesn't render Markdown, so this is written as plain text. After pasting, you can make the headings bold. For the screenshots, use the editor's **Insert image from URL** with the links given.
+**Body:** paste everything between the lines below. The forum editor doesn't render Markdown, so this is written as plain text. After pasting, make the headings bold. For screenshots, the forum's newer editor has no image button: upload the PNGs from `docs/screenshots/` through the attachments area below the editor (or drag them in), or paste an image URL on its own line.
 
 ---
 
@@ -36,9 +38,14 @@ WHAT IT DOES
 
 INSTALLING
 
-1. Install Glovebox from the Apps tab.
-2. Set the WebUI port (default 8080) and appdata path (default /mnt/user/appdata/glovebox).
+Glovebox has been submitted to Community Apps. Until it appears in the Apps tab, install it from the template:
+
+1. Open the Unraid terminal and run:
+wget -O /boot/config/plugins/dockerMan/templates-user/my-Glovebox.xml https://raw.githubusercontent.com/matthewjackson446/glovebox/main/unraid/glovebox.xml
+2. Go to Docker → Add Container, choose Glovebox from the Template list, check the port (default 8080) and appdata path (default /mnt/user/appdata/glovebox), then Apply.
 3. Open the WebUI. The first visit creates the admin account; add other people under Settings → Users.
+
+(Once Glovebox is listed in Community Apps, edit this section to: "Install Glovebox from the Apps tab.")
 
 Everything (the SQLite database and uploaded documents) lives in the appdata folder, so your normal appdata backup covers it.
 
