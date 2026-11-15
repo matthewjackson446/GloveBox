@@ -127,3 +127,9 @@
 		</section>
 	{/if}
 {/if}
+
+{#if data.archived}
+	<p class="mt-10 text-center text-sm">
+		<a href="/vehicles/archived" class="text-zinc-500 hover:text-zinc-900 hover:underline dark:hover:text-zinc-100">Archived vehicles ({data.archived})</a>
+	</p>
+{/if}

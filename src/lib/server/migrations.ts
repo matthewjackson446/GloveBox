@@ -202,5 +202,10 @@ export const migrations: string[] = [
 	/* 5: private calendar feed link per user */ `
 	ALTER TABLE users ADD COLUMN calendar_token TEXT;
 	CREATE UNIQUE INDEX users_calendar_token ON users(calendar_token);
+	`,
+
+	/* 6: when and why a vehicle was archived (sold, scrapped…) */ `
+	ALTER TABLE vehicles ADD COLUMN archived_at TEXT;
+	ALTER TABLE vehicles ADD COLUMN archive_note TEXT;
 	`
 ];

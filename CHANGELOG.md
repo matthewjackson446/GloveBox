@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- **Running costs:** a new Costs page shows each year’s spend by vehicle and category, built from service history, renewal costs (including past renewals) and finance payments.
+- **Archive vehicles** you no longer have, from the vehicle’s Edit page. They leave the dashboard, reminders, calendar and nightly DVLA/DVSA checks but keep their history and documents, and can be restored.
+
 ## v0.1.0 (first release)
 
 Glovebox keeps track of your vehicles' renewals and paperwork, and reminds you before anything runs out.

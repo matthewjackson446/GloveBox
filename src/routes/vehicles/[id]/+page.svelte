@@ -145,7 +145,19 @@
 	</div>
 </header>
 
-{#if data.lookupsEnabled}
+{#if v.archived}
+	<div class="mt-5 flex flex-wrap items-center gap-3 rounded-xl border border-zinc-300 bg-zinc-100 px-4 py-3 text-sm dark:border-zinc-700 dark:bg-zinc-900">
+		<span class="font-medium">Archived{v.archived_at ? ` on ${formatDate(v.archived_at)}` : ''}{v.archive_note ? `: ${v.archive_note}` : ''}</span>
+		<span class="text-zinc-500">No reminders, calendar entries or DVLA checks. History and documents are kept.</span>
+		{#if isOwner}
+			<form method="POST" action="?/restore" use:enhance class="ml-auto">
+				<button class="btn-secondary py-1.5">Restore</button>
+			</form>
+		{/if}
+	</div>
+{/if}
+
+{#if data.lookupsEnabled && !v.archived}
 	<div class="mt-5 flex flex-wrap items-center gap-x-3 gap-y-2 text-sm">
 		{#if v.tax_status && v.tax_status !== 'Taxed'}
 			<span class="rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-semibold text-red-800 dark:bg-red-950 dark:text-red-300">DVLA: {v.tax_status}</span>
@@ -237,7 +249,7 @@
 			</article>
 		{/each}
 
-		{#if canEdit}
+		{#if canEdit && !v.archived}
 			{#each missing as t (t)}
 				<a href="/vehicles/{v.id}/items/new?type={t}" class="flex items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-zinc-300 p-5 text-sm font-medium text-zinc-500 transition hover:border-emerald-500 hover:text-emerald-700 dark:border-zinc-700 dark:hover:border-emerald-500 dark:hover:text-emerald-400">
 					+ Add {ITEM_TYPES[t].label}
