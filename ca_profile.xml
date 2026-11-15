@@ -1,0 +1,8 @@
+<?xml version="1.0"?>
+<CommunityApplications>
+  <Profile>Glovebox is a self-hosted tracker for your vehicles: MOT, road tax, insurance, servicing, breakdown cover, warranty and finance, with daily reminders by email, ntfy, Gotify, Discord or webhook, a private calendar feed, service history, documents and a roadside emergency card. Optional DVLA and DVSA lookups (bring your own free keys) keep UK tax and MOT dates current. This repository contains the Glovebox app and its Unraid template. For help, use the support thread on the Unraid forums or open an issue on GitHub.</Profile>
+  <Icon>https://raw.githubusercontent.com/matthewjackson446/glovebox/main/static/icon.png</Icon>
+  <WebPage>https://github.com/matthewjackson446/GloveBox</WebPage>
+  <!-- Added once the Unraid forum support thread exists: -->
+  <!-- <Forum>https://forums.unraid.net/topic/…</Forum> -->
+</CommunityApplications>
