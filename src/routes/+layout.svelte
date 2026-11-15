@@ -2,6 +2,7 @@
 	import '../app.css';
 	import { page } from '$app/state';
 	import Logo from '$lib/components/Logo.svelte';
+	import ThemeToggle from '$lib/components/ThemeToggle.svelte';
 
 	let { data, children } = $props();
 
@@ -32,7 +33,8 @@
 					>
 				{/each}
 			</nav>
-			<div class="ml-auto flex items-center gap-3">
+			<div class="ml-auto flex items-center gap-2 sm:gap-3">
+				<ThemeToggle />
 				<span class="hidden text-sm text-zinc-500 sm:inline dark:text-zinc-400">{data.user.name}</span>
 				<form method="POST" action="/logout">
 					<button class="btn-ghost px-3 py-1.5">Sign out</button>

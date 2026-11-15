@@ -2,7 +2,7 @@
 	import { enhance } from '$app/forms';
 	import AuthShell from '$lib/components/AuthShell.svelte';
 
-	let { form } = $props();
+	let { data, form } = $props();
 	let busy = $state(false);
 </script>
 
@@ -21,6 +21,7 @@
 		}}
 	>
 		{#if form?.error}<p class="alert-error" role="alert">{form.error}</p>{/if}
+		{#if data.expired && !form?.error}<p class="alert-error" role="alert">Your sign-in timed out or had too many wrong codes. Enter your password again.</p>{/if}
 		<div>
 			<label class="label" for="email">Email</label>
 			<!-- svelte-ignore a11y_autofocus -->

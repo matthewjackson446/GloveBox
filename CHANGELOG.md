@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- **Two-factor sign-in (TOTP):** turn it on under **Settings → Two-factor sign-in** and scan the QR code with any authenticator app. Includes 10 single-use recovery codes, protection against code reuse, a 5-attempt limit, and an admin reset in **Settings → Users** for lost phones.
+- **Backup download:** admins can download a ZIP of the database and all uploaded documents from **Settings → Server → Backup**, with restore instructions inside.
+- **Light / dark mode toggle** in the header: match device, light or dark (remembered per browser).
+
 ## v0.2.0
 
 - **Now in Unraid Community Apps:** search “Glovebox” in the Apps tab. Support thread: https://forums.unraid.net/topic/201296-support-glovebox-self-hosted-vehicle-tracker-mot-tax-insurance-servicing-reminders/
