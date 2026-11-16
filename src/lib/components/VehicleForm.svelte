@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import type { Vehicle } from '$lib/types';
+	import { VEHICLE_CLASSES } from '$lib/emissions';
 
 	let {
 		vehicle,
@@ -107,6 +108,34 @@
 			<div>
 				<label class="label" for="vin">VIN / chassis number</label>
 				<input class="input uppercase" id="vin" name="vin" maxlength="32" value={v('vin')} />
+			</div>
+		</div>
+	</section>
+
+	<section class="card p-6">
+		<h2 class="section-title">Emissions and road tax</h2>
+		<p class="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+			Used to show the road tax band and whether clean air zones (like London’s ULEZ) will charge you. {lookupEnabled ? 'Filled in from DVLA where it can be.' : 'All on your V5C logbook.'}
+		</p>
+		<div class="mt-4 grid gap-4 sm:grid-cols-2">
+			<div>
+				<label class="label" for="vehicle_class">Type</label>
+				<select class="input" id="vehicle_class" name="vehicle_class" value={v('vehicle_class')}>
+					<option value="">Not set (treated as a car)</option>
+					{#each Object.entries(VEHICLE_CLASSES) as [value, label]}<option {value}>{label}</option>{/each}
+				</select>
+			</div>
+			<div>
+				<label class="label" for="first_registered">First registered</label>
+				<input class="input" id="first_registered" name="first_registered" type="month" value={v('first_registered')} />
+			</div>
+			<div>
+				<label class="label" for="co2_emissions">CO₂ (g/km)</label>
+				<input class="input" id="co2_emissions" name="co2_emissions" inputmode="numeric" placeholder="e.g. 121" value={v('co2_emissions')} />
+			</div>
+			<div>
+				<label class="label" for="euro_status">Euro status</label>
+				<input class="input" id="euro_status" name="euro_status" maxlength="20" placeholder="e.g. Euro 6" value={v('euro_status')} />
 			</div>
 		</div>
 	</section>

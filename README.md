@@ -16,6 +16,7 @@
 - **Running costs.** A Costs page totals each year by vehicle and category (insurance, tax, servicing and repairs, breakdown, warranty, finance), built from what you already record.
 - **Archive sold vehicles.** They leave the dashboard, reminders and calendar but keep their history, costs and documents, and can be restored.
 - **Renew with price history.** Roll an insurance, breakdown, warranty or tax period on a year and see how the price compares with previous years.
+- **Clean air zones and road tax band.** See at a glance whether London's ULEZ and the UK's Clean Air and Low Emission Zones are likely to charge each vehicle, and which road tax band it's in. These are worked out from the fuel, first registration date, CO₂ and Euro status, with links to the official checkers and current GOV.UK rates.
 - **DVLA and DVSA lookups (optional).** Bring your own free keys to fill in vehicle details from the registration and refresh tax and MOT dates, SORN status and MOT history every night.
 - **Emergency card that works with no signal.** A one-tap page with your breakdown line, insurer's claims line, policy numbers, locking wheel nut code and emergency contacts. Add Glovebox to your phone's home screen and every vehicle's card is saved on the phone, so it still opens at the roadside with no signal (needs HTTPS; see below). Saved cards are wiped when you sign out.
 - **Two-factor sign-in.** Optional 6-digit codes from any authenticator app, with recovery codes. Recommended if your instance is on the internet.

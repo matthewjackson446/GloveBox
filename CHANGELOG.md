@@ -4,6 +4,8 @@
 
 - **Emergency cards work with no signal:** while you're signed in and online, every vehicle's emergency card is saved on your phone. If there's no signal (or it's too weak to load within a few seconds), the saved copy opens instead, and the card says when it was saved. Saved cards are deleted when you sign out. Needs HTTPS.
 - **New Emergency cards page** (`/emergency`) listing every vehicle's card. It's a shortcut on the home-screen icon, and it's what opens if you start Glovebox with no signal.
+- **Clean air zones and road tax band:** each vehicle page shows whether London's ULEZ and the UK's Clean Air and Low Emission Zones are likely to charge it (Euro 4 petrol, Euro 6 diesel), and its road tax (VED) band: by engine size before March 2001, CO₂ band A–M until March 2017, then the standard rate, including when the expensive car supplement ends. Historic vehicles are recognised. DVLA usually leaves out the Euro status, so the clean air check is an estimate from the fuel and first registration date when it's missing, and says so. There are links to TfL, GOV.UK's zone checker and the current tax rates.
+- **New vehicle details:** first registration month, CO₂, Euro status and type (car, van or motorcycle). They're filled in from DVLA where it can be, and editable from your V5C.
 
 ## v0.4.0
 

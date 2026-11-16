@@ -3,6 +3,7 @@ import { formatDate } from '$lib/format';
 import type { Vehicle } from '$lib/types';
 import { db } from '../db';
 import { refreshAdvisories } from '../advisories';
+import { classFromTypeApproval } from '$lib/emissions';
 import {
 	LookupError,
 	dvlaConfigured,
@@ -85,6 +86,10 @@ export async function lookupRegistration(reg: string): Promise<LookupResult> {
 	set('year', dvla?.yearOfManufacture ?? (dvsa?.manufactureDate ?? dvsa?.firstUsedDate)?.slice(0, 4));
 	const latestMiles = sortedTests(dvsa).map(miles).find((m) => m !== null);
 	set('mileage', latestMiles);
+	set('first_registered', firstRegistered(dvla, dvsa));
+	set('co2_emissions', dvla?.co2Emissions);
+	set('euro_status', tidy(dvla?.euroStatus));
+	set('vehicle_class', classFromTypeApproval(dvla?.typeApproval));
 
 	const facts: string[] = [];
 	if (dvla?.taxStatus) facts.push(`Tax: ${dvla.taxStatus}${dvla.taxDueDate ? `, due ${formatDate(isoDate(dvla.taxDueDate))}` : ''}`);
@@ -93,6 +98,13 @@ export async function lookupRegistration(reg: string): Promise<LookupResult> {
 	if (dvsa?.motTests?.length) facts.push(`${dvsa.motTests.length} MOT test${dvsa.motTests.length === 1 ? '' : 's'} on record`);
 
 	return { found: !!(dvla || dvsa), values, facts, errors };
+}
+
+/** YYYY-MM from DVLA's monthOfFirstRegistration, or DVSA's first-used date. */
+function firstRegistered(dvla: DvlaVehicle | null, dvsa: DvsaVehicle | null): string | null {
+	const m = dvla?.monthOfFirstRegistration?.slice(0, 7);
+	if (m && /^\d{4}-\d{2}$/.test(m)) return m;
+	return isoDate(dvsa?.firstUsedDate)?.slice(0, 7) ?? null;
 }
 
 const msg = (e: unknown) => (e instanceof LookupError ? e.message : `Lookup failed: ${(e as Error).message}`);
@@ -106,6 +118,15 @@ function motDueDate(dvla: DvlaVehicle | null, dvsa: DvsaVehicle | null): string 
 }
 
 /* ---------- syncing a saved vehicle ---------- */
+
+const FILL_LABELS: Partial<Record<keyof Vehicle, string>> = {
+	fuel_type: 'fuel type',
+	engine_cc: 'engine size',
+	first_registered: 'first registration date',
+	co2_emissions: 'CO₂ emissions',
+	euro_status: 'Euro status',
+	vehicle_class: 'vehicle type'
+};
 
 export interface SyncResult {
 	changes: string[];
@@ -136,12 +157,16 @@ export async function syncVehicle(vehicleId: number): Promise<SyncResult> {
 			['colour', tidy(dvla?.colour ?? dvsa?.primaryColour)],
 			['fuel_type', fuel(dvla?.fuelType ?? dvsa?.fuelType)],
 			['engine_cc', dvla?.engineCapacity ?? null],
-			['year', dvla?.yearOfManufacture ?? null]
+			['year', dvla?.yearOfManufacture ?? null],
+			['first_registered', firstRegistered(dvla, dvsa)],
+			['co2_emissions', dvla?.co2Emissions ?? null],
+			['euro_status', tidy(dvla?.euroStatus)],
+			['vehicle_class', classFromTypeApproval(dvla?.typeApproval)]
 		];
 		for (const [col, val] of fills) {
 			if (val != null && (v[col] === null || v[col] === '')) {
 				conn.prepare(`UPDATE vehicles SET ${col} = ? WHERE id = ?`).run(val, v.id);
-				changes.push(`Filled in ${col.replace('_', ' ')}`);
+				changes.push(`Filled in ${FILL_LABELS[col] ?? col.replace('_', ' ')}`);
 			}
 		}
 

@@ -35,6 +35,12 @@ export interface Vehicle {
 	/** Why, e.g. "Sold to a private buyer". */
 	archive_note: string | null;
 	auto_sync: number;
+	/** YYYY-MM. */
+	first_registered: string | null;
+	co2_emissions: number | null;
+	euro_status: string | null;
+	/** car / van / motorcycle */
+	vehicle_class: string | null;
 	tax_status: string | null;
 	mot_status: string | null;
 	synced_at: string | null;

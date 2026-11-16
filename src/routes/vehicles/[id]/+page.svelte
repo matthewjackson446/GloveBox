@@ -12,6 +12,8 @@
 	import { milesPerYear, projectMileageDate, recordKindLabel } from '$lib/history';
 	import IntervalBar from '$lib/components/IntervalBar.svelte';
 	import AdvisoryList from '$lib/components/AdvisoryList.svelte';
+	import EmissionsPanel from '$lib/components/EmissionsPanel.svelte';
+	import { monthName } from '$lib/emissions';
 	import { intervalProgress } from '$lib/progress';
 	import type { DocumentRow } from '$lib/types';
 
@@ -38,6 +40,9 @@
 			['Colour', v.colour],
 			['Fuel', v.fuel_type],
 			['Engine', v.engine_cc ? `${v.engine_cc.toLocaleString('en-GB')} cc` : null],
+			['First registered', v.first_registered ? monthName(v.first_registered) : null],
+			['CO₂', v.co2_emissions != null ? `${v.co2_emissions} g/km` : null],
+			['Euro status', v.euro_status],
 			['VIN', v.vin],
 			['Tyre size', v.tyre_size],
 			['Tyre pressures', v.tyre_pressure_front || v.tyre_pressure_rear ? `Front ${v.tyre_pressure_front ?? '—'} · Rear ${v.tyre_pressure_rear ?? '—'}` : null],
@@ -378,6 +383,14 @@
 			/>
 		</div>
 	{/if}
+</section>
+
+<!-- Clean air zones and road tax band -->
+<section class="mt-12 scroll-mt-20" id="emissions">
+	<h2 class="section-title">Clean air zones and road tax</h2>
+	<div class="mt-3">
+		<EmissionsPanel vehicle={v} taxPaid={data.items.find((i) => i.type === 'tax')?.cost ?? null} canEdit={canEdit && !v.archived} />
+	</div>
 </section>
 
 <!-- Vehicle details -->
