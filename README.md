@@ -17,7 +17,7 @@
 - **Archive sold vehicles.** They leave the dashboard, reminders and calendar but keep their history, costs and documents, and can be restored.
 - **Renew with price history.** Roll an insurance, breakdown, warranty or tax period on a year and see how the price compares with previous years.
 - **DVLA and DVSA lookups (optional).** Bring your own free keys to fill in vehicle details from the registration and refresh tax and MOT dates, SORN status and MOT history every night.
-- **Emergency card.** A one-tap page with your breakdown line, insurer's claims line, policy numbers, locking wheel nut code and emergency contacts.
+- **Emergency card that works with no signal.** A one-tap page with your breakdown line, insurer's claims line, policy numbers, locking wheel nut code and emergency contacts. Add Glovebox to your phone's home screen and every vehicle's card is saved on the phone, so it still opens at the roadside with no signal (needs HTTPS; see below). Saved cards are wiped when you sign out.
 - **Two-factor sign-in.** Optional 6-digit codes from any authenticator app, with recovery codes. Recommended if your instance is on the internet.
 - **Backup download.** Admins can download a ZIP of the database and all documents from **Settings → Server**.
 - **Light and dark mode.** Follows your device, or pick one from the header.
@@ -75,6 +75,8 @@ services:
 | `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURITY`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM` | unset | Optional email settings. If `SMTP_HOST` is set, these take priority over **Settings → Server** and are shown read-only there. `SMTP_SECURITY` is `starttls` (default), `tls` or `none`. |
 
 **Reverse proxy:** Glovebox works on plain `http://<lan-ip>:8080` and behind a reverse proxy over HTTPS. Pass `X-Forwarded-Proto` and `X-Forwarded-Host` through; Nginx Proxy Manager and SWAG do this by default. Cookies are only marked `Secure` when the request came in over HTTPS.
+
+**Using it on your phone:** open Glovebox over HTTPS, then choose **Add to Home Screen** (Safari) or **Install app** (Chrome). Long-press the icon for a shortcut straight to your emergency cards. Browsers only allow offline use over HTTPS, so over plain `http://<lan-ip>` the emergency cards still work but need a connection.
 
 **Reminders:** in **Settings → Server**, an admin sets the daily send time, an optional public URL (for links in notifications) and SMTP details if anyone wants email. Each user then adds their own channels under **Settings → Reminders**.
 
