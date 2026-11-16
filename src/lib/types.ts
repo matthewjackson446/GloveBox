@@ -61,6 +61,23 @@ export interface MotTest {
 	defects: string;
 }
 
+export type AdvisoryStatus = 'open' | 'fixed' | 'dismissed' | 'superseded';
+
+export interface MotAdvisory {
+	id: number;
+	vehicle_id: number;
+	/** Null when added by hand. */
+	test_number: string | null;
+	tested_on: string | null;
+	text: string;
+	severity: 'advisory' | 'minor';
+	/** How many earlier passed MOTs flagged the same thing (retests in the same year aren't counted twice). */
+	seen_before: number;
+	status: AdvisoryStatus;
+	resolved_at: string | null;
+	created_at: string;
+}
+
 export interface ServiceRecord {
 	id: number;
 	vehicle_id: number;

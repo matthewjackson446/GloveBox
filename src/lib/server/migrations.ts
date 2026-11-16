@@ -216,5 +216,39 @@ export const migrations: string[] = [
 	ALTER TABLE users ADD COLUMN totp_recovery TEXT;
 	-- Last time-step accepted, so a code can't be reused.
 	ALTER TABLE users ADD COLUMN totp_last_step INTEGER;
+	`,
+
+	/* 8: MOT advisories as a to-do list */ `
+	-- Advisories (and minor defects) from a vehicle's latest MOT, or added by hand
+	-- (test_number NULL). Not tied to mot_tests rows, which are replaced on every sync.
+	CREATE TABLE mot_advisories (
+		id          INTEGER PRIMARY KEY,
+		vehicle_id  INTEGER NOT NULL REFERENCES vehicles(id) ON DELETE CASCADE,
+		test_number TEXT,
+		tested_on   TEXT,
+		text        TEXT NOT NULL,
+		severity    TEXT NOT NULL DEFAULT 'advisory' CHECK (severity IN ('advisory', 'minor')),
+		-- How many earlier passed MOTs (one per MOT year, so retests aren't counted twice) flagged the same thing.
+		seen_before INTEGER NOT NULL DEFAULT 0,
+		-- superseded: a newer MOT replaced the list this came from.
+		status      TEXT NOT NULL DEFAULT 'open' CHECK (status IN ('open', 'fixed', 'dismissed', 'superseded')),
+		resolved_at TEXT,
+		created_at  TEXT NOT NULL DEFAULT (datetime('now'))
+	);
+	CREATE INDEX mot_advisories_vehicle ON mot_advisories(vehicle_id, status);
+
+	-- Backfill from MOT history already synced: each vehicle's latest test.
+	INSERT INTO mot_advisories (vehicle_id, test_number, tested_on, text, severity, seen_before)
+	SELECT t.vehicle_id, t.test_number, substr(t.completed_at, 1, 10), json_extract(d.value, '$.text'),
+		CASE WHEN upper(json_extract(d.value, '$.type')) = 'MINOR' THEN 'minor' ELSE 'advisory' END,
+		(SELECT count(DISTINCT p.id) FROM mot_tests p, json_each(p.defects) pd
+		 WHERE p.vehicle_id = t.vehicle_id
+		   AND upper(p.result) LIKE 'PASS%'
+		   AND substr(p.completed_at, 1, 10) < substr(t.completed_at, 1, 10)
+		   AND json_extract(pd.value, '$.text') = json_extract(d.value, '$.text'))
+	FROM mot_tests t, json_each(t.defects) d
+	WHERE t.completed_at = (SELECT max(completed_at) FROM mot_tests WHERE vehicle_id = t.vehicle_id)
+	  AND upper(json_extract(d.value, '$.type')) IN ('ADVISORY', 'MINOR')
+	  AND json_extract(d.value, '$.text') IS NOT NULL;
 	`
 ];

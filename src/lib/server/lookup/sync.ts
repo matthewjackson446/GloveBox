@@ -2,6 +2,7 @@ import { ITEM_TYPES } from '$lib/items';
 import { formatDate } from '$lib/format';
 import type { Vehicle } from '$lib/types';
 import { db } from '../db';
+import { refreshAdvisories } from '../advisories';
 import {
 	LookupError,
 	dvlaConfigured,
@@ -172,6 +173,7 @@ export async function syncVehicle(vehicleId: number): Promise<SyncResult> {
 					JSON.stringify((t.defects ?? []).map((d) => ({ type: d.type, text: d.text, dangerous: !!d.dangerous })))
 				);
 			}
+			refreshAdvisories(v.id);
 
 			// 4. Mileage: only ever move it forwards.
 			const latest = sortedTests(dvsa).map(miles).find((m) => m !== null);

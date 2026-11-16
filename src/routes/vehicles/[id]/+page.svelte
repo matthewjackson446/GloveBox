@@ -11,6 +11,7 @@
 	import UploadForm from '$lib/components/UploadForm.svelte';
 	import { milesPerYear, projectMileageDate, recordKindLabel } from '$lib/history';
 	import IntervalBar from '$lib/components/IntervalBar.svelte';
+	import AdvisoryList from '$lib/components/AdvisoryList.svelte';
 	import { intervalProgress } from '$lib/progress';
 	import type { DocumentRow } from '$lib/types';
 
@@ -99,8 +100,11 @@
 		return null;
 	};
 	const sourceLabel = { manual: 'Updated', service: 'Service', mot: 'MOT' };
+	const openAdvisories = $derived(data.advisories.filter((a) => a.status === 'open').length);
+	const showAdvisories = $derived(data.advisories.length > 0 || data.motTests.length > 0 || (canEdit && !v.archived));
 	const sections = $derived([
 		['renewals', 'Renewals'],
+		...(showAdvisories ? [['advisories', 'Advisories']] : []),
 		['history', 'History'],
 		['documents', 'Documents'],
 		...(data.motTests.length ? [['mot', 'MOT']] : []),
@@ -229,6 +233,11 @@
 						{#if item.due_mileage != null && projected(item.due_mileage)}
 							<p class="mt-0.5 text-xs text-zinc-500">Around {formatDate(projected(item.due_mileage))} at your usual {rate?.toLocaleString('en-GB')} miles a year</p>
 						{/if}
+						{#if item.type === 'mot' && openAdvisories}
+							<a href="#advisories" class="mt-0.5 block text-xs font-medium text-amber-700 hover:underline dark:text-amber-400">
+								{openAdvisories} open advisor{openAdvisories === 1 ? 'y' : 'ies'} from the last MOT
+							</a>
+						{/if}
 					</div>
 					{#if canEdit}
 						<div class="-mt-1 -mr-2 flex shrink-0">
@@ -272,6 +281,18 @@
 		</div>
 	{/if}
 </section>
+
+<!-- MOT advisories -->
+{#if showAdvisories}
+	<section class="mt-12 scroll-mt-20" id="advisories">
+		<AdvisoryList
+			advisories={data.advisories}
+			canEdit={canEdit && !v.archived}
+			hasMotHistory={data.motTests.length > 0}
+			error={form?.advisoryError ?? null}
+		/>
+	</section>
+{/if}
 
 <!-- Service history -->
 <section class="mt-12 scroll-mt-20" id="history">
