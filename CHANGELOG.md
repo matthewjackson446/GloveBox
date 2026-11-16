@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## v0.3.0
 
 - **ARM64 images:** Glovebox now runs on Raspberry Pi 4/5, Apple Silicon and other ARM64 machines as well as x86-64. The same tags (`latest`, `edge`, version numbers) work on both.
 - **Two-factor sign-in (TOTP):** turn it on under **Settings → Two-factor sign-in** and scan the QR code with any authenticator app. Includes 10 single-use recovery codes, protection against code reuse, a 5-attempt limit, and an admin reset in **Settings → Users** for lost phones.

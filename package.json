@@ -1,6 +1,6 @@
 {
 	"name": "glovebox",
-	"version": "0.2.0",
+	"version": "0.3.0",
 	"description": "Self-hosted vehicle tracker for MOT, tax, insurance, servicing and more.",
 	"private": true,
 	"license": "MIT",
