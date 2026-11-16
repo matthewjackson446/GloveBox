@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## v0.4.0
 
 - **Needs attention:** the dashboard now opens with everything that’s overdue or due within 30 days (or 1,000 miles) across all your vehicles, each with a one-tap **Renew** or **Update** button.
 - **Progress bars** on each renewal show how far through its year, policy or service interval you are (by date or mileage, whichever is further along). Service intervals start from your last logged service.

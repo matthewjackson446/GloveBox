@@ -6,8 +6,9 @@
 
 ![Dashboard](docs/screenshots/dashboard.png)
 
-- **Dashboard.** Every vehicle at a glance, with overdue items in red and anything due within 30 days in amber.
-- **Renewals and due dates.** Store providers, policy and membership numbers, phone numbers, premiums and excesses alongside the dates.
+- **Dashboard.** A **Needs attention** list at the top gathers everything overdue (red) or due within 30 days (amber) across all your vehicles, with a one-tap **Renew** or **Update** button for each item. Below it, every vehicle at a glance.
+- **Renewals and due dates.** Store providers, policy and membership numbers, phone numbers, premiums and excesses alongside the dates. A progress bar shows how far through each policy, MOT year or service interval you are.
+- **MOT advisories to-do list.** Advisories from the last MOT become a checklist to tick off before the next one, with repeat advisories highlighted. They appear in your MOT reminders too. With DVSA keys they're filled in for you; without them, add them by hand.
 - **Service by date or mileage.** Update the mileage and service reminders work out the rest.
 - **Calendar feed.** A private link per user for Google, Apple or Outlook Calendar.
 - **Reminders.** A daily digest by email, [ntfy](https://ntfy.sh), Gotify, Discord or webhook (e.g. Home Assistant). Each user picks when (60/30/14/7/3/1 days before, and when overdue) and where. You never get the same reminder twice, and renewing an item starts its reminders afresh.
@@ -28,6 +29,10 @@
 | ![Vehicle page](docs/screenshots/vehicle.png) | ![Service history, mileage and documents](docs/screenshots/history.png) |
 | **Reminders** | **Emergency card (phone)** |
 | ![Reminder settings](docs/screenshots/reminders.png) | <img src="docs/screenshots/emergency-mobile.png" width="300" alt="Emergency card on a phone" /> |
+
+**MOT advisories**
+
+![MOT advisories checklist](docs/screenshots/advisories.png)
 
 See [CHANGELOG.md](CHANGELOG.md) for what's in each release.
 
