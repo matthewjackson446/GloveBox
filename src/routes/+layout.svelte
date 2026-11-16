@@ -22,22 +22,25 @@
 				<Logo class="size-7" />
 				<span class="hidden sm:inline">Glovebox</span>
 			</a>
-			<nav class="flex gap-1 text-sm">
+			<nav class="flex gap-0.5 text-sm sm:gap-1">
 				{#each links as link}
 					<a
 						href={link.href}
-						class="rounded-lg px-3 py-1.5 font-medium transition {link.match(page.url.pathname)
+						class="rounded-lg px-2 py-1.5 font-medium sm:px-3 transition {link.match(page.url.pathname)
 							? 'bg-zinc-100 text-zinc-900 dark:bg-zinc-800 dark:text-zinc-100'
 							: 'text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100'}"
 						aria-current={link.match(page.url.pathname) ? 'page' : undefined}>{link.label}</a
 					>
 				{/each}
 			</nav>
-			<div class="ml-auto flex items-center gap-2 sm:gap-3">
+			<div class="ml-auto flex items-center gap-1 sm:gap-3">
 				<ThemeToggle />
 				<span class="hidden text-sm text-zinc-500 sm:inline dark:text-zinc-400">{data.user.name}</span>
 				<form method="POST" action="/logout">
-					<button class="btn-ghost px-3 py-1.5">Sign out</button>
+					<button class="btn-ghost px-2 py-1.5 sm:px-3" title="Sign out">
+						<svg viewBox="0 0 20 20" class="size-4 sm:hidden" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M8 4H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3M13 13.5 16.5 10 13 6.5M16.5 10H8" stroke-linecap="round" stroke-linejoin="round" /></svg>
+						<span class="sr-only sm:not-sr-only">Sign out</span>
+					</button>
 				</form>
 			</div>
 		</div>

@@ -1,4 +1,5 @@
 import { RECORD_KINDS } from '$lib/history';
+import type { LastService } from '$lib/progress';
 import { todayISO } from '$lib/status';
 import type { DueItem, ItemHistory, MileageReading, MotTest, ServiceRecord } from '$lib/types';
 import { db } from './db';
@@ -73,6 +74,21 @@ export function listRecords(vehicleId: number): ServiceRecord[] {
 	return db()
 		.prepare('SELECT * FROM service_records WHERE vehicle_id = ? ORDER BY date DESC, id DESC')
 		.all(vehicleId) as ServiceRecord[];
+}
+
+/** Each vehicle's most recent service (kind "service"), keyed by vehicle id. */
+export function lastServices(vehicleIds: number[]): Record<number, LastService> {
+	if (!vehicleIds.length) return {};
+	const rows = db()
+		.prepare(
+			`SELECT vehicle_id, date, mileage FROM service_records
+			 WHERE kind = 'service' AND vehicle_id IN (${vehicleIds.map(() => '?').join(',')})
+			 ORDER BY date DESC, id DESC`
+		)
+		.all(...vehicleIds) as { vehicle_id: number; date: string; mileage: number | null }[];
+	const out: Record<number, LastService> = {};
+	for (const r of rows) out[r.vehicle_id] ??= { date: r.date, mileage: r.mileage };
+	return out;
 }
 
 export function getRecord(vehicleId: number, recordId: number): ServiceRecord | undefined {

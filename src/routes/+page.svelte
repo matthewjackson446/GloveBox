@@ -3,7 +3,9 @@
 	import StatusDot from '$lib/components/StatusDot.svelte';
 	import StatusText from '$lib/components/StatusText.svelte';
 	import { formatDate, formatMiles, vehicleName } from '$lib/format';
-	import { CORE_TYPES, ITEM_TYPES, itemTitle } from '$lib/items';
+	import IntervalBar from '$lib/components/IntervalBar.svelte';
+	import { CORE_TYPES, ITEM_TYPES, isRenewable, itemTitle } from '$lib/items';
+	import { intervalProgress } from '$lib/progress';
 	import { compareStates, itemState, worst } from '$lib/status';
 
 	let { data } = $props();
@@ -12,25 +14,33 @@
 
 	const vehicles = $derived(
 		data.vehicles.map((v) => {
+			const last = data.lastServices[v.id] ?? null;
 			const items = data.items
 				.filter((i) => i.vehicle_id === v.id)
-				.map((i) => ({ ...i, state: itemState(i, v.mileage) }))
+				.map((i) => ({ ...i, state: itemState(i, v.mileage), progress: intervalProgress(i, v.mileage, last) }))
 				.sort((a, b) => compareStates(a.state, b.state));
 			const missing = CORE_TYPES.filter((t) => !items.some((i) => i.type === t));
 			return { ...v, items, missing, status: worst(items.map((i) => i.state.status)) };
 		})
 	);
 
-	const upcoming = $derived(
+	const allItems = $derived(
 		vehicles
 			.flatMap((v) => v.items.map((i) => ({ ...i, vehicle: v })))
-			.filter((i) => i.state.status === 'overdue' || i.state.status === 'soon' || (i.state.days !== null && i.state.days <= UPCOMING_DAYS))
 			.sort((a, b) => compareStates(a.state, b.state))
 	);
 
+	/** Overdue or due within 30 days / 1,000 miles, shown at the top. */
+	const attention = $derived(allItems.filter((i) => i.state.status === 'overdue' || i.state.status === 'soon'));
+
+	/** Everything else due in the next 90 days. */
+	const upcoming = $derived(
+		allItems.filter((i) => i.state.status === 'ok' && i.state.days !== null && i.state.days <= UPCOMING_DAYS)
+	);
+
 	const counts = $derived({
-		overdue: upcoming.filter((i) => i.state.status === 'overdue').length,
-		soon: upcoming.filter((i) => i.state.status === 'soon').length
+		overdue: attention.filter((i) => i.state.status === 'overdue').length,
+		soon: attention.filter((i) => i.state.status === 'soon').length
 	});
 
 	const ring = {
@@ -72,7 +82,40 @@
 		<a href="/vehicles/new" class="btn-primary mt-6">Add your first vehicle</a>
 	</div>
 {:else}
-	<div class="mt-8 grid gap-4 sm:grid-cols-2">
+	{#if attention.length}
+		<section class="mt-6" aria-labelledby="attention-title">
+			<h2 id="attention-title" class="section-title">Needs attention</h2>
+			<ul class="mt-3 grid gap-3 md:grid-cols-2">
+				{#each attention as item (item.id)}
+					<li class="card relative border-l-4 p-4 transition hover:shadow-md {item.state.status === 'overdue' ? 'border-l-red-500' : 'border-l-amber-400'}">
+						<div class="flex items-start gap-3">
+							<div class="w-24 shrink-0 pt-0.5"><Plate registration={item.vehicle.registration} size="sm" /></div>
+							<div class="min-w-0 flex-1">
+								<a href="/vehicles/{item.vehicle.id}#renewals" class="block truncate font-semibold after:absolute after:inset-0 hover:text-emerald-700 dark:hover:text-emerald-400">
+									{itemTitle(item)}
+								</a>
+								<p class="truncate text-xs text-zinc-500 dark:text-zinc-400">
+									{vehicleName(item.vehicle)}{#if item.due_date}{' · '}{formatDate(item.due_date)}{/if}{#if item.due_mileage != null}{item.due_date ? ' or ' : ' · '}{formatMiles(item.due_mileage)}{/if}
+								</p>
+								<StatusText state={item.state} class="mt-1 block" />
+							</div>
+							{#if item.vehicle.role !== 'viewer'}
+								<a
+									href="/vehicles/{item.vehicle.id}/items/{item.id}{isRenewable(item.type) ? '/renew' : ''}"
+									class="btn-ghost relative z-10 -mr-2 shrink-0 px-3 py-1.5"
+								>
+									{isRenewable(item.type) ? 'Renew' : 'Update'}
+								</a>
+							{/if}
+						</div>
+						{#if item.progress}<IntervalBar progress={item.progress} status={item.state.status} class="mt-3" />{/if}
+					</li>
+				{/each}
+			</ul>
+		</section>
+	{/if}
+
+	<div class="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2">
 		{#each vehicles as v (v.id)}
 			<a href="/vehicles/{v.id}" class="card group block p-5 ring-2 transition hover:border-zinc-300 hover:shadow-md dark:hover:border-zinc-700 {ring[v.status]}">
 				<div class="flex items-start justify-between gap-3">
@@ -110,7 +153,7 @@
 
 	{#if upcoming.length}
 		<section class="mt-12">
-			<h2 class="section-title">Coming up in the next {UPCOMING_DAYS} days</h2>
+			<h2 class="section-title">{attention.length ? 'Later' : 'Coming up'} in the next {UPCOMING_DAYS} days</h2>
 			<ul class="card mt-3 divide-y divide-zinc-100 dark:divide-zinc-800">
 				{#each upcoming as item (item.id)}
 					<li>
