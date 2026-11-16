@@ -4,6 +4,7 @@ import {
 	createSession,
 	findUserByEmail,
 	getDummyHash,
+	isSecureRequest,
 	isThrottled,
 	normaliseEmail,
 	recordFailedLogin,
@@ -11,6 +12,7 @@ import {
 	verifyPassword
 } from '$lib/server/auth';
 import { text } from '$lib/server/form';
+import { PENDING_COOKIE, startPending } from '$lib/server/totp';
 import type { Actions, PageServerLoad } from './$types';
 
 /** Only allow same-site relative redirects after login. */
@@ -20,6 +22,7 @@ function safeNext(next: string | null): string {
 
 export const load: PageServerLoad = ({ locals, url }) => {
 	if (locals.user) redirect(303, safeNext(url.searchParams.get('next')));
+	return { expired: url.searchParams.has('expired') };
 };
 
 export const actions: Actions = {
@@ -43,8 +46,23 @@ export const actions: Actions = {
 		}
 
 		clearFailedLogins(key);
+		const next = safeNext(event.url.searchParams.get('next'));
+
+		// Two-factor on: no session yet. Hold a short-lived pending sign-in and ask for the code.
+		if ((user as typeof user & { totp_enabled?: number }).totp_enabled) {
+			const token = startPending(user.id, next);
+			event.cookies.set(PENDING_COOKIE, token, {
+				path: '/login',
+				httpOnly: true,
+				sameSite: 'lax',
+				secure: isSecureRequest(event),
+				maxAge: 5 * 60
+			});
+			redirect(303, '/login/2fa');
+		}
+
 		const session = createSession(user.id);
 		setSessionCookie(event, session.token, session.expires);
-		redirect(303, safeNext(event.url.searchParams.get('next')));
+		redirect(303, next);
 	}
 };

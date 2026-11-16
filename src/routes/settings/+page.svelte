@@ -81,6 +81,82 @@
 		</form>
 	</section>
 
+	<section class="card p-6 lg:col-span-2" id="security">
+		<div class="flex flex-wrap items-center justify-between gap-3">
+			<h2 class="font-semibold">Two-factor sign-in</h2>
+			<span class="text-xs font-medium {data.security.enabled ? 'text-emerald-700 dark:text-emerald-400' : 'text-zinc-500'}">{data.security.enabled ? '● On' : '○ Off'}</span>
+		</div>
+		<p class="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+			After your password, also ask for a 6-digit code from an authenticator app (Google Authenticator, Microsoft Authenticator, 1Password, Bitwarden…). Recommended if Glovebox is reachable from the internet.
+		</p>
+		{#if form?.security?.error}<p class="alert-error mt-4">{form.security.error}</p>{/if}
+		{#if form?.security?.success}<p class="alert-success mt-4">{form.security.success}</p>{/if}
+		{#if data.security.justUsedRecovery}
+			<p class="alert-error mt-4">
+				You signed in with a recovery code ({data.security.recoveryLeft} left). If you’ve lost your phone, turn two-factor off and set it up again on your new one, or create new recovery codes.
+			</p>
+		{/if}
+
+		{#if form?.recoveryCodes}
+			<div class="mt-4 rounded-xl border-2 border-amber-300 bg-amber-50 p-4 dark:border-amber-700 dark:bg-amber-950/40">
+				<p class="font-semibold">Save your recovery codes now</p>
+				<p class="mt-1 text-sm text-zinc-700 dark:text-zinc-300">
+					Each one signs you in once if you lose your phone. They won’t be shown again. Store them somewhere safe, like your password manager.
+				</p>
+				<ol class="mt-3 grid grid-cols-2 gap-x-6 gap-y-1 font-mono text-sm sm:grid-cols-5">
+					{#each form.recoveryCodes as code}<li>{code}</li>{/each}
+				</ol>
+				<button type="button" class="btn-secondary mt-3 py-1.5" onclick={(e) => { navigator.clipboard?.writeText(form!.recoveryCodes!.join('\n')); e.currentTarget.textContent = 'Copied'; }}>Copy codes</button>
+			</div>
+		{/if}
+
+		{#if data.security.setup}
+			<div class="mt-5 grid gap-6 sm:grid-cols-[auto_1fr]">
+				<div class="w-48 rounded-xl bg-white p-2 shadow-sm ring-1 ring-zinc-200 [&>svg]:h-auto [&>svg]:w-full" aria-label="QR code for your authenticator app">
+					{@html data.security.setup.qr}
+				</div>
+				<div class="text-sm">
+					<ol class="list-decimal space-y-1.5 pl-5 text-zinc-700 dark:text-zinc-300">
+						<li>In your authenticator app, add an account and scan this QR code.</li>
+						<li>Can’t scan? Choose “enter a setup key” and type: <span class="font-mono font-medium select-all">{data.security.setup.secret}</span></li>
+						<li>Enter the 6-digit code the app shows to finish.</li>
+					</ol>
+					<form method="POST" action="?/totpConfirm" use:enhance class="mt-4 flex flex-wrap gap-2">
+						<input class="input w-36 text-center font-mono text-lg tracking-widest" name="code" inputmode="numeric" autocomplete="one-time-code" maxlength="7" placeholder="000000" required aria-label="6-digit code" />
+						<button class="btn-primary">Turn on</button>
+					</form>
+					<form method="POST" action="?/totpCancel" use:enhance class="mt-2">
+						<button class="btn-ghost px-0 py-1 text-xs">Cancel setup</button>
+					</form>
+				</div>
+			</div>
+		{:else if data.security.enabled}
+			<p class="mt-4 text-sm">Recovery codes left: <strong>{data.security.recoveryLeft}</strong> of 10.</p>
+			<div class="mt-4 grid gap-4 lg:grid-cols-2">
+				<form method="POST" action="?/totpRegenerate" use:enhance class="rounded-xl bg-zinc-50 p-4 dark:bg-zinc-950/60">
+					<p class="text-sm font-medium">New recovery codes</p>
+					<p class="mt-1 text-xs text-zinc-500">Replaces your current codes.</p>
+					<div class="mt-3 flex flex-wrap gap-2">
+						<input class="input w-40 font-mono" name="code" inputmode="numeric" autocomplete="one-time-code" placeholder="Current code" required aria-label="Current code" />
+						<button class="btn-secondary">Create new codes</button>
+					</div>
+				</form>
+				<form method="POST" action="?/totpDisable" use:enhance={({ cancel }) => { if (!confirm('Turn off two-factor sign-in?')) cancel(); }} class="rounded-xl bg-zinc-50 p-4 dark:bg-zinc-950/60">
+					<p class="text-sm font-medium">Turn off two-factor sign-in</p>
+					<div class="mt-3 flex flex-wrap gap-2">
+						<input class="input w-44" name="password" type="password" autocomplete="current-password" placeholder="Your password" required aria-label="Your password" />
+						<input class="input w-32 font-mono" name="code" inputmode="numeric" autocomplete="one-time-code" placeholder="Code" required aria-label="Current code" />
+						<button class="btn-danger">Turn off</button>
+					</div>
+				</form>
+			</div>
+		{:else}
+			<form method="POST" action="?/totpBegin" use:enhance class="mt-4">
+				<button class="btn-primary">Set up two-factor sign-in</button>
+			</form>
+		{/if}
+	</section>
+
 	<section class="card p-6 lg:col-span-2" id="reminders">
 		<h2 class="font-semibold">Reminders</h2>
 		<p class="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
