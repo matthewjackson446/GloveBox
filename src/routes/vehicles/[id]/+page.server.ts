@@ -14,6 +14,7 @@ import {
 import { lookupsConfigured, syncVehicle } from '$lib/server/lookup/sync';
 import { ACCEPT, deleteDocument, listDocuments, saveDocument } from '$lib/server/documents';
 import { listRecords, mileageHistory, spending } from '$lib/server/history';
+import { addAdvisory, deleteAdvisory, listAdvisories, setAdvisoryStatus } from '$lib/server/advisories';
 import { todayISO } from '$lib/status';
 import type { MotTest, VehicleRole } from '$lib/types';
 import type { Actions, PageServerLoad } from './$types';
@@ -31,6 +32,7 @@ export const load: PageServerLoad = ({ params, locals }) => {
 		records: listRecords(vehicle.id),
 		documents: listDocuments(vehicle.id),
 		mileage: mileageHistory(vehicle.id),
+		advisories: listAdvisories(vehicle.id),
 		spending: spending(vehicle.id),
 		accept: ACCEPT
 	};
@@ -89,6 +91,25 @@ export const actions: Actions = {
 		db()
 			.prepare('INSERT INTO mileage_log (vehicle_id, date, mileage) VALUES (?, ?, ?)')
 			.run(vehicle.id, todayISO(), mileage);
+	},
+
+	addAdvisory: async ({ params, locals, request }) => {
+		const vehicle = requireVehicle(params.id, locals.user, 'editor');
+		const advisory = text(await request.formData(), 'text', 300);
+		if (!advisory) return fail(400, { advisoryError: 'Describe the advisory, e.g. “Front tyres close to legal limit”.' });
+		addAdvisory(vehicle.id, advisory);
+	},
+
+	advisoryStatus: async ({ params, locals, request }) => {
+		const vehicle = requireVehicle(params.id, locals.user, 'editor');
+		const fd = await request.formData();
+		if (!setAdvisoryStatus(vehicle.id, Number(fd.get('id')), String(fd.get('status'))))
+			return fail(400, { advisoryError: 'That advisory couldn’t be updated.' });
+	},
+
+	deleteAdvisory: async ({ params, locals, request }) => {
+		const vehicle = requireVehicle(params.id, locals.user, 'editor');
+		deleteAdvisory(vehicle.id, Number((await request.formData()).get('id')));
 	},
 
 	share: async ({ params, locals, request }) => {

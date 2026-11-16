@@ -5,6 +5,8 @@
 - **Needs attention:** the dashboard now opens with everything that’s overdue or due within 30 days (or 1,000 miles) across all your vehicles, each with a one-tap **Renew** or **Update** button.
 - **Progress bars** on each renewal show how far through its year, policy or service interval you are (by date or mileage, whichever is further along). Service intervals start from your last logged service.
 - **Phone layout fixes:** the dashboard and header no longer run off the side of narrow screens; **Sign out** becomes an icon on phones.
+- **MOT advisories to-do list:** advisories and minor defects from the latest MOT become a checklist on the vehicle page. Tick each one off as **Fixed** or **Ignore** it, and anything flagged at earlier MOTs too is highlighted. Without DVSA keys you can add advisories by hand. Ticked-off items stay ticked off when the MOT history refreshes, and a new MOT replaces the list.
+- **MOT reminders list your open advisories**, so the 30-day reminder is a nudge to get them sorted before the test. The MOT card and the dashboard show how many are still open.
 
 ## v0.3.0
 

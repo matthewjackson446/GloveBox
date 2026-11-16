@@ -3,6 +3,7 @@ import { itemTitle } from '$lib/items';
 import { SOON_MILES, describeState, itemState, todayISO, type ItemState } from '$lib/status';
 import type { DueItem } from '$lib/types';
 import { db } from '../db';
+import { openAdvisories } from '../advisories';
 import { publicUrl } from '../settings';
 import { deliver, listChannels, type Message } from './channels';
 
@@ -31,6 +32,8 @@ export interface PendingReminder {
 	threshold: string;
 	kind: 'date' | 'miles';
 	state: ItemState;
+	/** For MOT reminders: open advisories from the last test. */
+	advisories?: string[];
 }
 
 export function parseDays(value: string): number[] {
@@ -70,6 +73,7 @@ export function pendingReminders(user: ReminderUser, today = todayISO()): Pendin
 		'SELECT 1 FROM reminder_log WHERE user_id = ? AND item_id = ? AND due_key = ? AND threshold = ?'
 	);
 
+	const advisories = openAdvisories([...new Set(items.filter((i) => i.type === 'mot').map((i) => i.vehicle_id))]);
 	const leadDays = parseDays(user.reminder_days);
 	const overdue = user.remind_overdue === 1;
 	const out: PendingReminder[] = [];
@@ -88,7 +92,8 @@ export function pendingReminders(user: ReminderUser, today = todayISO()): Pendin
 		}
 
 		for (const c of candidates) {
-			if (!alreadySent.get(user.id, item.id, c.dueKey, c.threshold)) out.push({ ...c, item, state });
+			if (alreadySent.get(user.id, item.id, c.dueKey, c.threshold)) continue;
+			out.push({ ...c, item, state, ...(item.type === 'mot' && advisories[item.vehicle_id] ? { advisories: advisories[item.vehicle_id] } : {}) });
 		}
 	}
 
@@ -132,6 +137,19 @@ function headline(p: PendingReminder): string {
 const escapeHtml = (s: string) =>
 	s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!);
 
+/** Up to three advisories, then "+N more". */
+function advisorySummary(list: string[]): string {
+	const shown = list.slice(0, 3).join('; ');
+	return list.length > 3 ? `${shown}; +${list.length - 3} more` : shown;
+}
+
+function advisoryHtml(list: string[] | undefined): string {
+	if (!list?.length) return '';
+	const items = list.slice(0, 3).map((a) => `<li>${escapeHtml(a)}</li>`).join('');
+	const more = list.length > 3 ? `<li>+${list.length - 3} more</li>` : '';
+	return `<div style="margin-top:6px;color:#52525b;font-size:13px">Open advisories from the last MOT:<ul style="margin:4px 0 0;padding-left:18px">${items}${more}</ul></div>`;
+}
+
 export function buildMessage(pending: PendingReminder[], base = publicUrl()): Message {
 	const url = base ? `${base.replace(/\/+$/, '')}/` : null;
 	const urgent = pending.some((p) =>
@@ -142,7 +160,11 @@ export function buildMessage(pending: PendingReminder[], base = publicUrl()): Me
 			? `${pending[0].item.registration}: ${headline(pending[0])}`
 			: `Glovebox: ${pending.length} things need attention`;
 
-	const lines = pending.map((p) => `• ${vehicleLabel(p.item)}: ${itemTitle(p.item)}, ${detail(p)}`);
+	const lines = pending.map((p) => {
+		const line = `• ${vehicleLabel(p.item)}: ${itemTitle(p.item)}, ${detail(p)}`;
+		return p.advisories?.length ? `${line}
+  Open advisories: ${advisorySummary(p.advisories)}` : line;
+	});
 	const text = lines.join('\n');
 
 	const rows = pending
@@ -150,7 +172,7 @@ export function buildMessage(pending: PendingReminder[], base = publicUrl()): Me
 			const overdue = p.state.status === 'overdue';
 			return `<tr>
 	<td style="padding:10px 12px;border-bottom:1px solid #e4e4e7;white-space:nowrap"><span style="background:#f7c600;color:#000;font-weight:900;padding:2px 6px;border-radius:4px;font-family:Arial Black,Arial,sans-serif;letter-spacing:.05em">${escapeHtml(p.item.registration)}</span></td>
-	<td style="padding:10px 12px;border-bottom:1px solid #e4e4e7"><strong>${escapeHtml(itemTitle(p.item))}</strong>${p.item.nickname ? ` <span style="color:#71717a">· ${escapeHtml(p.item.nickname)}</span>` : ''}<br><span style="color:${overdue ? '#dc2626' : '#d97706'}">${escapeHtml(detail(p))}</span></td>
+	<td style="padding:10px 12px;border-bottom:1px solid #e4e4e7"><strong>${escapeHtml(itemTitle(p.item))}</strong>${p.item.nickname ? ` <span style="color:#71717a">· ${escapeHtml(p.item.nickname)}</span>` : ''}<br><span style="color:${overdue ? '#dc2626' : '#d97706'}">${escapeHtml(detail(p))}</span>${advisoryHtml(p.advisories)}</td>
 </tr>`;
 		})
 		.join('');

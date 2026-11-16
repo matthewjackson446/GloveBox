@@ -98,6 +98,12 @@
 									{vehicleName(item.vehicle)}{#if item.due_date}{' · '}{formatDate(item.due_date)}{/if}{#if item.due_mileage != null}{item.due_date ? ' or ' : ' · '}{formatMiles(item.due_mileage)}{/if}
 								</p>
 								<StatusText state={item.state} class="mt-1 block" />
+								{#if item.type === 'mot' && data.advisories[item.vehicle.id]?.length}
+									{@const n = data.advisories[item.vehicle.id].length}
+									<a href="/vehicles/{item.vehicle.id}#advisories" class="relative z-10 mt-0.5 block text-xs font-medium text-amber-700 hover:underline dark:text-amber-400">
+										{n} open advisor{n === 1 ? 'y' : 'ies'} to check first
+									</a>
+								{/if}
 							</div>
 							{#if item.vehicle.role !== 'viewer'}
 								<a
