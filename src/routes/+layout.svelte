@@ -1,10 +1,20 @@
 <script lang="ts">
 	import '../app.css';
+	import { onMount } from 'svelte';
 	import { page } from '$app/state';
 	import Logo from '$lib/components/Logo.svelte';
 	import ThemeToggle from '$lib/components/ThemeToggle.svelte';
 
 	let { data, children } = $props();
+
+	// While signed in and online, have the service worker save every emergency card
+	// for when there's no signal. It skips this if it did it in the last few minutes.
+	onMount(() => {
+		if (!data.user || !('serviceWorker' in navigator)) return;
+		navigator.serviceWorker.ready
+			.then((reg) => reg.active?.postMessage({ type: 'sync-emergency' }))
+			.catch(() => {});
+	});
 
 	const links = [
 		{ href: '/', label: 'Dashboard', match: (p: string) => p === '/' || p.startsWith('/vehicles') },

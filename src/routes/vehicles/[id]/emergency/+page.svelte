@@ -1,5 +1,6 @@
 <script lang="ts">
 	import Plate from '$lib/components/Plate.svelte';
+	import OfflineStatus from '$lib/components/OfflineStatus.svelte';
 	import { formatDate, formatMoney, telHref, vehicleName } from '$lib/format';
 	import { ITEM_TYPES, itemTitle } from '$lib/items';
 	import { todayISO } from '$lib/status';
@@ -22,7 +23,11 @@
 <svelte:head><title>Emergency · {v.registration} · Glovebox</title></svelte:head>
 
 <div class="mx-auto max-w-xl">
-	<a href="/vehicles/{v.id}" class="text-sm text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100">← {v.registration}</a>
+	<div class="flex items-center justify-between gap-3 text-sm">
+		<a href="/vehicles/{v.id}" class="text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100">← {v.registration}</a>
+		<a href="/emergency" data-sveltekit-reload class="text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100">All emergency cards</a>
+	</div>
+	<OfflineStatus class="mt-3" />
 
 	<a href="tel:999" class="mt-4 flex items-center justify-between rounded-2xl bg-red-600 px-5 py-4 text-white shadow-sm transition hover:bg-red-500">
 		<div>

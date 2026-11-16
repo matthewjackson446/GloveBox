@@ -11,5 +11,14 @@
 		{ "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" },
 		{ "src": "/icon.png", "sizes": "512x512", "type": "image/png" },
 		{ "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml" }
+	],
+	"shortcuts": [
+		{
+			"name": "Emergency cards",
+			"short_name": "Emergency",
+			"description": "Breakdown and claims lines, policy numbers and what you'll be asked for. Works without signal.",
+			"url": "/emergency",
+			"icons": [{ "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+		}
 	]
 }
