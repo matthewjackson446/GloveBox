@@ -21,7 +21,7 @@
 - **Backup download.** Admins can download a ZIP of the database and all documents from **Settings → Server**.
 - **Light and dark mode.** Follows your device, or pick one from the header.
 - **Multi-user.** The admin creates accounts. Each vehicle can be shared with other users as *owner*, *can edit* or *can view*.
-- **One container, one SQLite file.** All data lives in `/config`.
+- **One container, one SQLite file.** All data lives in `/config`. Images are built for x86-64 and ARM64 (Raspberry Pi 4/5, Apple Silicon, ARM NAS boxes).
 
 | Vehicle | Service history and documents |
 | --- | --- |
