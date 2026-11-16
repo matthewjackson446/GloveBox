@@ -53,6 +53,8 @@ export interface DvlaVehicle {
 	markedForExport?: boolean;
 	co2Emissions?: number;
 	euroStatus?: string;
+	/** M1 car, N1 van, L… motorcycle. */
+	typeApproval?: string;
 }
 
 export function dvlaConfigured(): boolean {

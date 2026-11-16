@@ -3,6 +3,7 @@ import { ITEM_FIELDS, ITEM_TYPES, type ItemField } from '$lib/items';
 import type { DueItem, SessionUser, VehicleRole, VehicleWithRole } from '$lib/types';
 import { db } from './db';
 import { date, int, money, text } from './form';
+import { VEHICLE_CLASSES } from '$lib/emissions';
 
 /* ---------- access control ---------- */
 
@@ -61,6 +62,10 @@ export const VEHICLE_COLUMNS = [
 	'colour',
 	'fuel_type',
 	'engine_cc',
+	'first_registered',
+	'co2_emissions',
+	'euro_status',
+	'vehicle_class',
 	'vin',
 	'mileage',
 	'purchase_date',
@@ -92,6 +97,10 @@ export function readVehicleForm(fd: FormData): { data: VehicleInput; error?: str
 		colour: text(fd, 'colour', 40),
 		fuel_type: text(fd, 'fuel_type', 30),
 		engine_cc: int(fd, 'engine_cc'),
+		first_registered: /^\d{4}-(0[1-9]|1[0-2])$/.test(String(fd.get('first_registered') ?? '')) ? String(fd.get('first_registered')) : null,
+		co2_emissions: int(fd, 'co2_emissions'),
+		euro_status: text(fd, 'euro_status', 20),
+		vehicle_class: Object.hasOwn(VEHICLE_CLASSES, String(fd.get('vehicle_class'))) ? String(fd.get('vehicle_class')) : null,
 		vin: text(fd, 'vin', 32)?.toUpperCase() ?? null,
 		mileage: int(fd, 'mileage'),
 		purchase_date: date(fd, 'purchase_date'),
@@ -108,6 +117,8 @@ export function readVehicleForm(fd: FormData): { data: VehicleInput; error?: str
 	const year = data.year as number | null;
 	if (year !== null && (year < 1885 || year > new Date().getFullYear() + 1))
 		return { data, error: 'That year doesn’t look right.' };
+	const co2 = data.co2_emissions as number | null;
+	if (co2 !== null && (co2 < 0 || co2 > 999)) return { data, error: 'CO₂ should be in g/km, between 0 and 999.' };
 	return { data };
 }
 

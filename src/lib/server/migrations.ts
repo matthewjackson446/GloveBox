@@ -250,5 +250,15 @@ export const migrations: string[] = [
 	WHERE t.completed_at = (SELECT max(completed_at) FROM mot_tests WHERE vehicle_id = t.vehicle_id)
 	  AND upper(json_extract(d.value, '$.type')) IN ('ADVISORY', 'MINOR')
 	  AND json_extract(d.value, '$.text') IS NOT NULL;
+	`,
+
+	/* 9: emissions facts for clean air zone and road tax band */ `
+	-- Month of first registration, YYYY-MM (DVLA monthOfFirstRegistration).
+	ALTER TABLE vehicles ADD COLUMN first_registered TEXT;
+	ALTER TABLE vehicles ADD COLUMN co2_emissions INTEGER;
+	-- e.g. "Euro 6". Often missing from DVLA records.
+	ALTER TABLE vehicles ADD COLUMN euro_status TEXT;
+	-- car / van / motorcycle (from DVLA typeApproval M1 / N1 / L).
+	ALTER TABLE vehicles ADD COLUMN vehicle_class TEXT;
 	`
 ];
