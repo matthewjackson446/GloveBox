@@ -18,7 +18,7 @@
 - **DVLA and DVSA lookups (optional).** Bring your own free keys to fill in vehicle details from the registration and refresh tax and MOT dates, SORN status and MOT history every night.
 - **Emergency card.** A one-tap page with your breakdown line, insurer's claims line, policy numbers, locking wheel nut code and emergency contacts.
 - **Multi-user.** The admin creates accounts. Each vehicle can be shared with other users as *owner*, *can edit* or *can view*.
-- **One container, one SQLite file.** All data lives in `/config`.
+- **One container, one SQLite file.** All data lives in `/config`. Images are built for x86-64 and ARM64 (Raspberry Pi 4/5, Apple Silicon, ARM NAS boxes).
 
 | Vehicle | Service history and documents |
 | --- | --- |

@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **ARM64 images:** Glovebox now runs on Raspberry Pi 4/5, Apple Silicon and other ARM64 machines as well as x86-64. The same tags (`latest`, `edge`, version numbers) work on both.
+
 ## v0.2.0
 
 - **Now in Unraid Community Apps:** search “Glovebox” in the Apps tab. Support thread: https://forums.unraid.net/topic/201296-support-glovebox-self-hosted-vehicle-tracker-mot-tax-insurance-servicing-reminders/
