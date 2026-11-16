@@ -10,6 +10,8 @@
 	import DocumentList from '$lib/components/DocumentList.svelte';
 	import UploadForm from '$lib/components/UploadForm.svelte';
 	import { milesPerYear, projectMileageDate, recordKindLabel } from '$lib/history';
+	import IntervalBar from '$lib/components/IntervalBar.svelte';
+	import { intervalProgress } from '$lib/progress';
 	import type { DocumentRow } from '$lib/types';
 
 	let { data, form } = $props();
@@ -18,9 +20,11 @@
 	const canEdit = $derived(v.role !== 'viewer');
 	const isOwner = $derived(v.role === 'owner');
 
+	/** Records are newest first, so this is the latest service. */
+	const lastService = $derived(data.records.find((r) => r.kind === 'service') ?? null);
 	const items = $derived(
 		data.items
-			.map((i) => ({ ...i, state: itemState(i, v.mileage) }))
+			.map((i) => ({ ...i, state: itemState(i, v.mileage), progress: intervalProgress(i, v.mileage, lastService) }))
 			.sort((a, b) => compareStates(a.state, b.state))
 	);
 	const missing = $derived(CORE_TYPES.filter((t) => !items.some((i) => i.type === t)));
@@ -233,6 +237,7 @@
 						</div>
 					{/if}
 				</div>
+				{#if item.progress}<IntervalBar progress={item.progress} status={item.state.status} class="mt-3" />{/if}
 
 				{#if item.provider || item.reference || item.phone || item.emergency_phone || item.cost != null || item.website}
 					<dl class="mt-4 grid grid-cols-[auto_1fr] gap-x-4 gap-y-1.5 border-t border-zinc-100 pt-4 text-sm dark:border-zinc-800">

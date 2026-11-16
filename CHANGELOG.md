@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- **Needs attention:** the dashboard now opens with everything that’s overdue or due within 30 days (or 1,000 miles) across all your vehicles, each with a one-tap **Renew** or **Update** button.
+- **Progress bars** on each renewal show how far through its year, policy or service interval you are (by date or mileage, whichever is further along). Service intervals start from your last logged service.
+- **Phone layout fixes:** the dashboard and header no longer run off the side of narrow screens; **Sign out** becomes an icon on phones.
+
 ## v0.3.0
 
 - **ARM64 images:** Glovebox now runs on Raspberry Pi 4/5, Apple Silicon and other ARM64 machines as well as x86-64. The same tags (`latest`, `edge`, version numbers) work on both.
