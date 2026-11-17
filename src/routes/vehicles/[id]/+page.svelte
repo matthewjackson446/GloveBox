@@ -154,6 +154,7 @@
 			<svg viewBox="0 0 20 20" class="size-4" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M8.5 3.3a1.7 1.7 0 0 1 3 0l6.3 11.2A1.7 1.7 0 0 1 16.3 17H3.7a1.7 1.7 0 0 1-1.5-2.5zM10 7a.9.9 0 0 0-.9.9v3.2a.9.9 0 1 0 1.8 0V7.9A.9.9 0 0 0 10 7m0 7.6a1 1 0 1 0 0-2 1 1 0 0 0 0 2" clip-rule="evenodd" /></svg>
 			Emergency card
 		</a>
+		<a href="/vehicles/{v.id}/sale-pack" class="btn-secondary" title="A PDF of its history to give a buyer">Sale pack</a>
 		{#if canEdit}<a href="/vehicles/{v.id}/edit" class="btn-secondary">Edit</a>{/if}
 	</div>
 </header>
