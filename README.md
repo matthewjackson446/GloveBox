@@ -36,6 +36,10 @@
 
 ![MOT advisories checklist](docs/screenshots/advisories.png)
 
+**Clean air zones and road tax**
+
+![Clean air zone status and road tax band](docs/screenshots/emissions.png)
+
 See [CHANGELOG.md](CHANGELOG.md) for what's in each release.
 
 ## Running on Unraid

@@ -85,7 +85,10 @@ export function cleanAir(v: Facts, today = new Date()): CleanAirResult {
 	const euro = euroNumber(v.euro_status);
 	if (euro !== null && fuel !== 'unknown') {
 		const need = cls === 'motorcycle' ? NEEDS.motorcycle : fuel === 'diesel' ? NEEDS.diesel : NEEDS.petrol;
-		if (euro >= need) return { verdict: 'meets', headline: 'Meets the standard', detail: `${v.euro_status} meets the ${cls === 'motorcycle' ? 'Euro 3' : fuel === 'diesel' ? 'Euro 6' : 'Euro 4'} standard.` };
+		if (euro >= need) {
+			const who = cls === 'motorcycle' ? 'motorcycles' : `${fuel === 'hybrid' ? 'petrol hybrid' : fuel} ${cls === 'van' ? 'vans' : 'cars'}`;
+			return { verdict: 'meets', headline: 'Meets the standard', detail: `It’s ${v.euro_status}, and ${who} need Euro ${need}.` };
+		}
 		if (fuel === 'hybrid' && euro >= NEEDS.petrol)
 			return { verdict: 'check', headline: 'Depends on the engine', detail: `${v.euro_status} is enough for a petrol hybrid but not a diesel hybrid, which needs Euro 6.` };
 		return { verdict: 'not', headline: 'Likely to be charged', detail: `${v.euro_status} is below the ${fuel === 'diesel' ? 'Euro 6' : 'Euro 4'} standard.` };
