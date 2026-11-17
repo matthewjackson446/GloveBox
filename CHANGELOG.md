@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## v0.5.0
 
 - **Emergency cards work with no signal:** while you're signed in and online, every vehicle's emergency card is saved on your phone. If there's no signal (or it's too weak to load within a few seconds), the saved copy opens instead, and the card says when it was saved. Saved cards are deleted when you sign out. Needs HTTPS.
 - **New Emergency cards page** (`/emergency`) listing every vehicle's card. It's a shortcut on the home-screen icon, and it's what opens if you start Glovebox with no signal.
