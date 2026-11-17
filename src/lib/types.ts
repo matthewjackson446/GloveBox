@@ -151,6 +151,25 @@ export interface DueItem {
 	updated_at: string;
 }
 
+export interface Driver {
+	id: number;
+	user_id: number;
+	name: string;
+	created_at: string;
+}
+
+export interface DriverItem {
+	id: number;
+	driver_id: number;
+	type: string;
+	label: string | null;
+	due_date: string | null;
+	reference: string | null;
+	notes: string | null;
+	created_at: string;
+	updated_at: string;
+}
+
 export interface Contact {
 	id: number;
 	user_id: number;

@@ -1,7 +1,8 @@
 import { formatDate, formatMiles } from '$lib/format';
 import { itemTitle } from '$lib/items';
 import { SOON_MILES, describeState, itemState, todayISO, type ItemState } from '$lib/status';
-import type { DueItem } from '$lib/types';
+import type { DriverItem, DueItem } from '$lib/types';
+import { driverItemTitle } from '$lib/drivers';
 import { db } from '../db';
 import { openAdvisories } from '../advisories';
 import { publicUrl } from '../settings';
@@ -25,7 +26,9 @@ type ReminderItem = DueItem & {
 };
 
 export interface PendingReminder {
+	/** A vehicle's due item, or a driver's renewal shaped like one (registration = the person's name). */
 	item: ReminderItem;
+	source: 'vehicle' | 'driver';
 	/** What the reminder is for: `d:<date>` or `m:<mileage>`. */
 	dueKey: string;
 	/** `30`, `7`, `overdue`, `miles-soon`, `miles-overdue`… */
@@ -80,7 +83,7 @@ export function pendingReminders(user: ReminderUser, today = todayISO()): Pendin
 
 	for (const item of items) {
 		const state = itemState(item, item.vehicle_mileage, today);
-		const candidates: Omit<PendingReminder, 'item' | 'state'>[] = [];
+		const candidates: Omit<PendingReminder, 'item' | 'state' | 'source'>[] = [];
 
 		if (state.days !== null && item.due_date) {
 			const threshold = dateThreshold(state.days, leadDays, overdue);
@@ -93,11 +96,55 @@ export function pendingReminders(user: ReminderUser, today = todayISO()): Pendin
 
 		for (const c of candidates) {
 			if (alreadySent.get(user.id, item.id, c.dueKey, c.threshold)) continue;
-			out.push({ ...c, item, state, ...(item.type === 'mot' && advisories[item.vehicle_id] ? { advisories: advisories[item.vehicle_id] } : {}) });
+			out.push({ ...c, item, state, source: 'vehicle', ...(item.type === 'mot' && advisories[item.vehicle_id] ? { advisories: advisories[item.vehicle_id] } : {}) });
 		}
 	}
 
+	// Driver renewals: licence photocards, CPC, tachograph cards… (dates only).
+	const driverItems = conn
+		.prepare(
+			`SELECT i.*, d.name FROM driver_items i JOIN drivers d ON d.id = i.driver_id
+			 WHERE d.user_id = ? AND i.due_date IS NOT NULL`
+		)
+		.all(user.id) as (DriverItem & { name: string })[];
+	const driverSent = conn.prepare(
+		'SELECT 1 FROM driver_reminder_log WHERE user_id = ? AND driver_item_id = ? AND due_key = ? AND threshold = ?'
+	);
+	for (const di of driverItems) {
+		const state = itemState({ due_date: di.due_date, due_mileage: null }, null, today);
+		const threshold = state.days === null ? null : dateThreshold(state.days, leadDays, overdue);
+		const dueKey = `d:${di.due_date}`;
+		if (!threshold || driverSent.get(user.id, di.id, dueKey, threshold)) continue;
+		out.push({ item: asReminderItem(di), source: 'driver', dueKey, threshold, kind: 'date', state });
+	}
+
 	return out.sort((a, b) => urgency(a) - urgency(b));
+}
+
+/** Shape a driver renewal like a vehicle item so the message code can treat both alike. */
+function asReminderItem(di: DriverItem & { name: string }): ReminderItem {
+	return {
+		id: di.id,
+		vehicle_id: 0,
+		type: 'other',
+		label: driverItemTitle(di),
+		due_date: di.due_date,
+		due_mileage: null,
+		provider: null,
+		reference: di.reference,
+		phone: null,
+		emergency_phone: null,
+		website: null,
+		start_date: null,
+		cost: null,
+		excess: null,
+		notes: di.notes,
+		created_at: di.created_at,
+		updated_at: di.updated_at,
+		registration: di.name,
+		nickname: null,
+		vehicle_mileage: null
+	};
 }
 
 function urgency(p: PendingReminder): number {
@@ -171,7 +218,11 @@ export function buildMessage(pending: PendingReminder[], base = publicUrl()): Me
 		.map((p) => {
 			const overdue = p.state.status === 'overdue';
 			return `<tr>
-	<td style="padding:10px 12px;border-bottom:1px solid #e4e4e7;white-space:nowrap"><span style="background:#f7c600;color:#000;font-weight:900;padding:2px 6px;border-radius:4px;font-family:Arial Black,Arial,sans-serif;letter-spacing:.05em">${escapeHtml(p.item.registration)}</span></td>
+	<td style="padding:10px 12px;border-bottom:1px solid #e4e4e7;white-space:nowrap">${
+		p.source === 'driver'
+			? `<span style="border:1px solid #d4d4d8;color:#3f3f46;font-weight:600;padding:2px 6px;border-radius:4px">${escapeHtml(p.item.registration)}</span>`
+			: `<span style="background:#f7c600;color:#000;font-weight:900;padding:2px 6px;border-radius:4px;font-family:Arial Black,Arial,sans-serif;letter-spacing:.05em">${escapeHtml(p.item.registration)}</span>`
+	}</td>
 	<td style="padding:10px 12px;border-bottom:1px solid #e4e4e7"><strong>${escapeHtml(itemTitle(p.item))}</strong>${p.item.nickname ? ` <span style="color:#71717a">· ${escapeHtml(p.item.nickname)}</span>` : ''}<br><span style="color:${overdue ? '#dc2626' : '#d97706'}">${escapeHtml(detail(p))}</span>${advisoryHtml(p.advisories)}</td>
 </tr>`;
 		})
@@ -215,6 +266,9 @@ async function doRun(today: string): Promise<RunSummary> {
 	const log = conn.prepare(
 		'INSERT OR IGNORE INTO reminder_log (user_id, item_id, due_key, threshold) VALUES (?, ?, ?, ?)'
 	);
+	const driverLog = conn.prepare(
+		'INSERT OR IGNORE INTO driver_reminder_log (user_id, driver_item_id, due_key, threshold) VALUES (?, ?, ?, ?)'
+	);
 	const summary: RunSummary = { users: 0, reminders: 0, delivered: 0, failed: 0 };
 
 	for (const user of users) {
@@ -235,7 +289,7 @@ async function doRun(today: string): Promise<RunSummary> {
 		// If every channel failed, don't mark as sent: the next run will retry.
 		if (ok > 0) {
 			conn.transaction(() => {
-				for (const p of pending) log.run(user.id, p.item.id, p.dueKey, p.threshold);
+				for (const p of pending) (p.source === 'driver' ? driverLog : log).run(user.id, p.item.id, p.dueKey, p.threshold);
 			})();
 		}
 	}
