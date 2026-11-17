@@ -19,6 +19,8 @@
 	const links = [
 		{ href: '/', label: 'Dashboard', match: (p: string) => p === '/' || p.startsWith('/vehicles') },
 		{ href: '/costs', label: 'Costs', match: (p: string) => p.startsWith('/costs') },
+		// Hidden on phones, where the header has no room; the dashboard links to it instead.
+		{ href: '/drivers', label: 'Drivers', match: (p: string) => p.startsWith('/drivers'), wide: true },
 		{ href: '/settings', label: 'Settings', match: (p: string) => p.startsWith('/settings') }
 	];
 </script>
@@ -36,7 +38,7 @@
 				{#each links as link}
 					<a
 						href={link.href}
-						class="rounded-lg px-2 py-1.5 font-medium sm:px-3 transition {link.match(page.url.pathname)
+						class="rounded-lg px-2 py-1.5 font-medium sm:px-3 transition {'wide' in link ? 'hidden sm:block' : ''} {link.match(page.url.pathname)
 							? 'bg-zinc-100 text-zinc-900 dark:bg-zinc-800 dark:text-zinc-100'
 							: 'text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100'}"
 						aria-current={link.match(page.url.pathname) ? 'page' : undefined}>{link.label}</a

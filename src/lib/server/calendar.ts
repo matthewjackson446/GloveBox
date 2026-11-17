@@ -1,6 +1,7 @@
 import { randomBytes } from 'node:crypto';
 import { ITEM_TYPES, itemTitle } from '$lib/items';
-import type { DueItem } from '$lib/types';
+import type { DriverItem, DueItem } from '$lib/types';
+import { DRIVER_ITEM_TYPES, driverItemTitle } from '$lib/drivers';
 import { db } from './db';
 import { publicUrl } from './settings';
 
@@ -134,6 +135,39 @@ export function buildCalendar(userId: number, base = publicUrl()): string {
 			'BEGIN:VALARM',
 			'ACTION:DISPLAY',
 			`DESCRIPTION:${esc(`${vehicle}: ${what} in a week`)}`,
+			'TRIGGER:-P7D',
+			'END:VALARM',
+			'END:VEVENT'
+		);
+	}
+	// Driver renewals: "Sam: Licence photocard expires".
+	const driverItems = db()
+		.prepare(
+			`SELECT i.*, d.name FROM driver_items i JOIN drivers d ON d.id = i.driver_id
+			 WHERE d.user_id = ? AND i.due_date IS NOT NULL ORDER BY i.due_date`
+		)
+		.all(userId) as (DriverItem & { name: string })[];
+	const driversUrl = base ? `${base.replace(/\/+$/, '')}/drivers` : null;
+	for (const i of driverItems) {
+		// The last word of the type's due label: "Photocard expires" → "expires", "Medical due" → "due".
+		const verb = (DRIVER_ITEM_TYPES[i.type]?.dueLabel ?? 'Due').split(' ').at(-1)!.toLowerCase();
+		const title = `${i.name}: ${driverItemTitle(i)} ${verb}`;
+		const details = [i.reference && `Reference: ${i.reference}`, driversUrl && `Open in Glovebox: ${driversUrl}`].filter(Boolean) as string[];
+		lines.push(
+			'BEGIN:VEVENT',
+			`UID:glovebox-driver-item-${i.id}@glovebox`,
+			`DTSTAMP:${now}`,
+			`LAST-MODIFIED:${stamp(new Date(i.updated_at.replace(' ', 'T') + 'Z'))}`,
+			`DTSTART;VALUE=DATE:${ymd(i.due_date!)}`,
+			`DTEND;VALUE=DATE:${ymd(nextDay(i.due_date!))}`,
+			`SUMMARY:${esc(title)}`,
+			...(details.length ? [`DESCRIPTION:${esc(details.join('\n'))}`] : []),
+			...(driversUrl ? [`URL:${esc(driversUrl)}`] : []),
+			'TRANSP:TRANSPARENT',
+			'CATEGORIES:Glovebox',
+			'BEGIN:VALARM',
+			'ACTION:DISPLAY',
+			`DESCRIPTION:${esc(`${title} in a week`)}`,
 			'TRIGGER:-P7D',
 			'END:VALARM',
 			'END:VEVENT'

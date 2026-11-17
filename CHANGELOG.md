@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- **Driver renewals:** a new **Drivers** page (in the header on wider screens, and linked from the dashboard) for renewals that belong to a person rather than a vehicle. It covers licence photocards (10 years), licences at 70+ (3 years), Driver CPC (5 years), tachograph cards (5 years), D4 medicals and your own items. **Renew** rolls an item on by its usual period. They appear in **Needs attention**, the 90-day list and a Drivers section on the dashboard, and in reminders and the calendar feed. People are private to the account that adds them.
+- **Fix:** the **Needs attention** list no longer runs off the side of narrow phone screens when an item has a long line.
+
 ## v0.5.0
 
 - **Emergency cards work with no signal:** while you're signed in and online, every vehicle's emergency card is saved on your phone. If there's no signal (or it's too weak to load within a few seconds), the saved copy opens instead, and the card says when it was saved. Saved cards are deleted when you sign out. Needs HTTPS.

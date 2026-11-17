@@ -260,5 +260,39 @@ export const migrations: string[] = [
 	ALTER TABLE vehicles ADD COLUMN euro_status TEXT;
 	-- car / van / motorcycle (from DVLA typeApproval M1 / N1 / L).
 	ALTER TABLE vehicles ADD COLUMN vehicle_class TEXT;
+	`,
+
+	/* 10: driver renewals (licence photocard, CPC, tachograph card…) */ `
+	-- People whose renewals a user tracks. Private to that user.
+	CREATE TABLE drivers (
+		id         INTEGER PRIMARY KEY,
+		user_id    INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+		name       TEXT NOT NULL,
+		created_at TEXT NOT NULL DEFAULT (datetime('now'))
+	);
+	CREATE INDEX drivers_user ON drivers(user_id);
+
+	CREATE TABLE driver_items (
+		id         INTEGER PRIMARY KEY,
+		driver_id  INTEGER NOT NULL REFERENCES drivers(id) ON DELETE CASCADE,
+		type       TEXT NOT NULL,
+		label      TEXT,
+		due_date   TEXT,
+		reference  TEXT,
+		notes      TEXT,
+		created_at TEXT NOT NULL DEFAULT (datetime('now')),
+		updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+	);
+	CREATE INDEX driver_items_driver ON driver_items(driver_id);
+
+	-- Like reminder_log, for driver items.
+	CREATE TABLE driver_reminder_log (
+		user_id        INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+		driver_item_id INTEGER NOT NULL REFERENCES driver_items(id) ON DELETE CASCADE,
+		due_key        TEXT NOT NULL,
+		threshold      TEXT NOT NULL,
+		sent_at        TEXT NOT NULL DEFAULT (datetime('now')),
+		PRIMARY KEY (user_id, driver_item_id, due_key, threshold)
+	);
 	`
 ];
